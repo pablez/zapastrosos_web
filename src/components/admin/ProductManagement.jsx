@@ -186,7 +186,7 @@ const ProductManagement = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
         <div className="bg-white p-4 rounded-lg shadow-md">
           <div className="text-2xl font-bold text-cyan-600">{products.length}</div>
           <div className="text-gray-600 text-sm">Total Productos</div>
@@ -202,6 +202,18 @@ const ProductManagement = () => {
             {products.filter(p => p.status === 'inactivo').length}
           </div>
           <div className="text-gray-600 text-sm">Inactivos</div>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow-md">
+          <div className="text-2xl font-bold text-red-500">
+            {products.filter(p => (p.stock || 0) <= 5 && p.status === 'activo').length}
+          </div>
+          <div className="text-gray-600 text-sm">Stock Crítico</div>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow-md">
+          <div className="text-2xl font-bold text-yellow-500">
+            {products.filter(p => (p.stock || 0) > 5 && (p.stock || 0) <= 20 && p.status === 'activo').length}
+          </div>
+          <div className="text-gray-600 text-sm">Stock Bajo</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow-md">
           <div className="text-2xl font-bold text-purple-600">{categories.length}</div>
@@ -228,6 +240,9 @@ const ProductManagement = () => {
                   Precio
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Stock
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Estado
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -238,7 +253,7 @@ const ProductManagement = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
                     {products.length === 0 
                       ? 'No hay productos cargados. Ve a "Inicializar Datos" para cargar productos de muestra.'
                       : 'No se encontraron productos con los filtros aplicados.'
@@ -280,8 +295,22 @@ const ProductManagement = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        ${product.basePrice?.toFixed(2) || 'N/A'}
+                        Bs. {product.basePrice?.toFixed(2) || 'N/A'}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className={`text-sm font-medium ${
+                        (product.stock || 0) <= 5 ? 'text-red-600' : 
+                        (product.stock || 0) <= 20 ? 'text-yellow-600' : 'text-green-600'
+                      }`}>
+                        {product.stock !== undefined ? product.stock : 'N/A'}
+                        {product.stock !== undefined && (
+                          <span className="text-xs text-gray-500 ml-1">unidades</span>
+                        )}
+                      </div>
+                      {(product.stock || 0) <= 5 && product.stock !== undefined && (
+                        <div className="text-xs text-red-500">Stock bajo</div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button

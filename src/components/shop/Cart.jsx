@@ -28,9 +28,14 @@ const Cart = () => {
   const [promoApplied, setPromoApplied] = useState(false);
   const [showPromoForm, setShowPromoForm] = useState(false);
 
+  // Verificar si hay problemas de stock
+  const hasStockIssues = items.some(item => 
+    !item.stock || item.stock === 0 || item.quantity > item.stock
+  );
+
   // Calcular subtotal, descuentos y total
   const subtotal = getCartTotal();
-  const shipping = subtotal > 50 ? 0 : 5.99; // Envío gratis por encima de $50
+  const shipping = subtotal > 200 ? 0 : 15; // Envío gratis por encima de Bs. 200
   const promoDiscount = promoApplied ? subtotal * 0.1 : 0; // 10% de descuento
   const total = subtotal + shipping - promoDiscount;
 
@@ -147,7 +152,7 @@ const Cart = () => {
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal</span>
-                    <span>${subtotal.toFixed(2)}</span>
+                    <span>Bs. {subtotal.toFixed(2)}</span>
                   </div>
                   
                   <div className="flex justify-between text-gray-600">
@@ -156,7 +161,7 @@ const Cart = () => {
                       {shipping === 0 ? (
                         <span className="text-green-600 font-medium">¡Gratis!</span>
                       ) : (
-                        `$${shipping.toFixed(2)}`
+                        `Bs. ${shipping.toFixed(2)}`
                       )}
                     </span>
                   </div>
@@ -164,14 +169,14 @@ const Cart = () => {
                   {promoApplied && (
                     <div className="flex justify-between text-green-600">
                       <span>Descuento (ZAPASTROSO10)</span>
-                      <span>-${promoDiscount.toFixed(2)}</span>
+                      <span>-Bs. {promoDiscount.toFixed(2)}</span>
                     </div>
                   )}
 
                   <div className="border-t pt-4">
                     <div className="flex justify-between text-lg font-bold text-gray-900">
                       <span>Total</span>
-                      <span>${total.toFixed(2)}</span>
+                      <span>Bs. {total.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
@@ -218,7 +223,7 @@ const Cart = () => {
                   <div className="space-y-2 text-sm text-gray-600">
                     <div className="flex items-center">
                       <Truck className="w-4 h-4 text-green-600 mr-2" />
-                      <span>Envío gratis en pedidos +$50</span>
+                      <span>Envío gratis en pedidos +Bs. 200</span>
                     </div>
                     <div className="flex items-center">
                       <Shield className="w-4 h-4 text-blue-600 mr-2" />
@@ -233,12 +238,30 @@ const Cart = () => {
 
                 {/* Botón de checkout */}
                 <Link
-                  to="/checkout"
-                  className="w-full bg-cyan-600 text-white py-4 rounded-lg hover:bg-cyan-700 font-semibold text-lg inline-flex items-center justify-center transition-colors"
+                  to={hasStockIssues ? '#' : '/checkout'}
+                  onClick={(e) => {
+                    if (hasStockIssues) {
+                      e.preventDefault();
+                      alert('Por favor, ajusta las cantidades de los productos con problemas de stock antes de continuar.');
+                    }
+                  }}
+                  className={`w-full py-4 rounded-lg font-semibold text-lg inline-flex items-center justify-center transition-colors ${
+                    hasStockIssues 
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                      : 'bg-cyan-600 text-white hover:bg-cyan-700'
+                  }`}
                 >
                   <CreditCard className="w-5 h-5 mr-2" />
-                  Proceder al pago
+                  {hasStockIssues ? 'Revisar stock' : 'Proceder al pago'}
                 </Link>
+
+                {hasStockIssues && (
+                  <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-yellow-800 text-sm">
+                      ⚠️ Algunos productos tienen problemas de stock. Ajusta las cantidades antes de continuar.
+                    </p>
+                  </div>
+                )}
 
                 <p className="text-xs text-gray-500 mt-4 text-center">
                   Pago 100% seguro y protegido
@@ -258,6 +281,14 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
 
   const handleQuantityChange = async (newQuantity) => {
     if (newQuantity < 1) return;
+    
+    // Verificar stock disponible
+    const stockDisponible = item.stock || 0;
+    if (newQuantity > stockDisponible) {
+      alert(`No hay suficiente stock. Solo hay ${stockDisponible} unidades disponibles.`);
+      return;
+    }
+    
     setIsUpdating(true);
     await onUpdateQuantity(item.tenisId, item.variantId, newQuantity);
     setIsUpdating(false);
@@ -271,9 +302,22 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
 
   const precio = item.descuento > 0 ? item.precio : (item.precioOriginal || item.precio);
   const subtotalItem = precio * item.quantity;
+  const stockDisponible = item.stock || 0;
+  const stockInsuficiente = item.quantity > stockDisponible;
 
   return (
-    <div className="p-6">
+    <div className={`p-6 ${stockInsuficiente ? 'bg-red-50 border-l-4 border-red-500' : ''}`}>
+      {/* Alerta de stock insuficiente */}
+      {stockInsuficiente && (
+        <div className="mb-4 p-3 bg-red-100 border border-red-200 rounded-lg">
+          <div className="flex items-center">
+            <div className="text-red-600 font-medium text-sm">
+              ⚠️ Stock insuficiente: Solo hay {stockDisponible} unidades disponibles
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="flex items-start space-x-4">
         {/* Imagen del producto */}
         <div className="shrink-0 w-24 h-24">
@@ -298,15 +342,38 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
                 <span>Color: {item.color}</span>
               </div>
               
+              {/* Información de stock */}
+              <div className="mt-2 flex items-center space-x-2">
+                {stockDisponible > 0 ? (
+                  <>
+                    <div className={`w-2 h-2 rounded-full ${
+                      stockDisponible <= 5 ? 'bg-yellow-500' : 'bg-green-500'
+                    }`}></div>
+                    <span className={`text-xs font-medium ${
+                      stockDisponible <= 5 ? 'text-yellow-600' : 'text-green-600'
+                    }`}>
+                      {stockDisponible} en stock
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <span className="text-xs text-red-600 font-medium">
+                      Sin stock
+                    </span>
+                  </>
+                )}
+              </div>
+              
               {/* Precio */}
               <div className="mt-2">
                 {item.descuento > 0 ? (
                   <div className="flex items-center space-x-2">
                     <span className="text-lg font-bold text-red-600">
-                      ${item.precio.toFixed(2)}
+                      Bs. {item.precio.toFixed(2)}
                     </span>
                     <span className="text-sm text-gray-500 line-through">
-                      ${item.precioOriginal.toFixed(2)}
+                      Bs. {item.precioOriginal.toFixed(2)}
                     </span>
                     <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
                       -{item.descuento}%
@@ -314,7 +381,7 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
                   </div>
                 ) : (
                   <span className="text-lg font-bold text-gray-900">
-                    ${precio.toFixed(2)}
+                    Bs. {precio.toFixed(2)}
                   </span>
                 )}
               </div>
@@ -348,8 +415,9 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
                 </span>
                 <button
                   onClick={() => handleQuantityChange(item.quantity + 1)}
-                  disabled={isUpdating}
+                  disabled={isUpdating || item.quantity >= stockDisponible}
                   className="p-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={item.quantity >= stockDisponible ? "Stock máximo alcanzado" : "Aumentar cantidad"}
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -359,11 +427,16 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
             {/* Subtotal del item */}
             <div className="text-right">
               <div className="text-lg font-bold text-gray-900">
-                ${subtotalItem.toFixed(2)}
+                Bs. {subtotalItem.toFixed(2)}
               </div>
               {item.quantity > 1 && (
                 <div className="text-sm text-gray-500">
-                  ${precio.toFixed(2)} c/u
+                  Bs. {precio.toFixed(2)} c/u
+                </div>
+              )}
+              {stockInsuficiente && (
+                <div className="text-xs text-red-600 font-medium mt-1">
+                  Ajustar cantidad
                 </div>
               )}
             </div>

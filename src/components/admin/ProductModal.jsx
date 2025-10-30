@@ -9,6 +9,7 @@ const ProductModal = ({ isOpen, onClose, product = null, onSave }) => {
     brand: '',
     category: '',
     basePrice: '',
+    stock: '',
     description: '',
     mainImageUrl: '',
     images: [''],
@@ -49,6 +50,7 @@ const ProductModal = ({ isOpen, onClose, product = null, onSave }) => {
         brand: product.brand || '',
         category: product.category || '',
         basePrice: product.basePrice?.toString() || '',
+        stock: product.stock?.toString() || '',
         description: product.description || '',
         mainImageUrl: product.mainImageUrl || '',
         images: product.images?.length ? product.images : [''],
@@ -64,6 +66,7 @@ const ProductModal = ({ isOpen, onClose, product = null, onSave }) => {
         brand: '',
         category: '',
         basePrice: '',
+        stock: '',
         description: '',
         mainImageUrl: '',
         images: [''],
@@ -86,6 +89,9 @@ const ProductModal = ({ isOpen, onClose, product = null, onSave }) => {
     if (!formData.basePrice || isNaN(formData.basePrice) || formData.basePrice <= 0) {
       newErrors.basePrice = 'El precio debe ser un número válido mayor a 0';
     }
+    if (!formData.stock || isNaN(formData.stock) || formData.stock < 0) {
+      newErrors.stock = 'El stock debe ser un número válido mayor o igual a 0';
+    }
     if (!formData.description.trim()) newErrors.description = 'La descripción es requerida';
 
     setErrors(newErrors);
@@ -105,6 +111,7 @@ const ProductModal = ({ isOpen, onClose, product = null, onSave }) => {
         brand: formData.brand.trim(),
         category: formData.category,
         basePrice: parseFloat(formData.basePrice),
+        stock: parseInt(formData.stock),
         description: formData.description.trim(),
         mainImageUrl: formData.mainImageUrl.trim(),
         images: formData.images.filter(img => img.trim() !== ''),
@@ -247,6 +254,24 @@ const ProductModal = ({ isOpen, onClose, product = null, onSave }) => {
                   placeholder="0.00"
                 />
                 {errors.basePrice && <p className="text-red-500 text-sm mt-1">{errors.basePrice}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Stock Disponible *
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.stock}
+                  onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent ${
+                    errors.stock ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="0"
+                />
+                {errors.stock && <p className="text-red-500 text-sm mt-1">{errors.stock}</p>}
+                <p className="text-gray-500 text-xs mt-1">Cantidad de unidades disponibles para venta</p>
               </div>
 
               <div>

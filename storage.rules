@@ -6,7 +6,7 @@ service firebase.storage {
     // Función para verificar si el usuario es admin
     function isAdmin() {
       return request.auth != null && 
-             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+             firestore.get(/databases/(default)/documents/administradores/$(request.auth.uid)).data != null;
     }
     
     // Función para verificar si está autenticado
@@ -24,6 +24,15 @@ service firebase.storage {
     match /assets/{allPaths=**} {
       allow read: if true; // Logos públicos
       allow write: if isAdmin(); // Solo admins pueden cambiar logos/assets
+    }
+
+    // COMPROBANTES DE PAGO - Solo el usuario propietario y admins
+    match /comprobantes/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated() && 
+                     (request.auth.uid == userId || isAdmin());
+      allow write: if isAuthenticated() && 
+                      (request.auth.uid == userId || isAdmin()) &&
+                      isValidPaymentProofUpload();
     }
     
     // AVATARES DE USUARIOS - Solo el propio usuario y admins
@@ -43,6 +52,13 @@ service firebase.storage {
     function isValidImageUpload() {
       return request.resource.size < 5 * 1024 * 1024 && // Máximo 5MB
              request.resource.contentType.matches('image/.*'); // Solo imágenes
+    }
+
+    // Validación para comprobantes de pago (imágenes y PDFs)
+    function isValidPaymentProofUpload() {
+      return request.resource.size < 5 * 1024 * 1024 && // Máximo 5MB
+             (request.resource.contentType.matches('image/.*') ||
+              request.resource.contentType == 'application/pdf');
     }
     
     // Aplicar validaciones a todas las subidas de imágenes

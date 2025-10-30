@@ -16,8 +16,11 @@ import {
   Mail,
   MapPin,
   CreditCard,
-  Smartphone
+  Smartphone,
+  FileText
 } from 'lucide-react';
+import OrderLocationMap from './OrderLocationMap';
+import PaymentProofViewer from './PaymentProofViewer';
 
 const OrderManagement = () => {
   const [orders, setOrders] = useState([]);
@@ -233,8 +236,14 @@ const OrderManagement = () => {
                       <div className="text-sm font-medium text-gray-900">
                         {order.orderNumber || order.id.slice(0, 8)}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {order.items?.length || 0} productos
+                      <div className="text-sm text-gray-500 flex items-center space-x-2">
+                        <span>{order.items?.length || 0} productos</span>
+                        {order.paymentProofs && order.paymentProofs.length > 0 && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <FileText className="w-3 h-3 mr-1" />
+                            {order.paymentProofs.length}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -252,7 +261,7 @@ const OrderManagement = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      S/ {order.summary?.total?.toFixed(2) || '0.00'}
+                      Bs. {order.summary?.total?.toFixed(2) || '0.00'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {order.createdAt?.toDate ? 
@@ -365,6 +374,14 @@ const OrderManagement = () => {
                 </div>
               </div>
 
+              {/* Ubicación de entrega */}
+              {selectedOrder.customer?.location && (
+                <div className="mt-6">
+                  <h3 className="font-semibold text-gray-900 mb-3">Ubicación de Entrega</h3>
+                  <OrderLocationMap order={selectedOrder} />
+                </div>
+              )}
+
               {/* Productos del pedido */}
               <div className="mt-6">
                 <h3 className="font-semibold text-gray-900 mb-3">Productos</h3>
@@ -390,8 +407,8 @@ const OrderManagement = () => {
                             </div>
                           </td>
                           <td className="px-4 py-2">{item.quantity}</td>
-                          <td className="px-4 py-2">S/ {item.price?.toFixed(2)}</td>
-                          <td className="px-4 py-2">S/ {item.subtotal?.toFixed(2)}</td>
+                          <td className="px-4 py-2">Bs. {item.price?.toFixed(2)}</td>
+                          <td className="px-4 py-2">Bs. {item.subtotal?.toFixed(2)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -405,17 +422,22 @@ const OrderManagement = () => {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
-                    <span>S/ {selectedOrder.summary?.subtotal?.toFixed(2) || '0.00'}</span>
+                    <span>Bs. {selectedOrder.summary?.subtotal?.toFixed(2) || '0.00'}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Envío:</span>
-                    <span>S/ {selectedOrder.summary?.shipping?.toFixed(2) || '0.00'}</span>
+                  <div className="flex justify-between py-2">
+                    <span>Delivery:</span>
+                    <span>Bs. {selectedOrder.summary?.shipping?.toFixed(2) || '0.00'}</span>
                   </div>
-                  <div className="flex justify-between font-bold text-lg border-t pt-2">
+                  <div className="flex justify-between py-2 font-bold border-t pt-2">
                     <span>Total:</span>
-                    <span>S/ {selectedOrder.summary?.total?.toFixed(2) || '0.00'}</span>
+                    <span>Bs. {selectedOrder.summary?.total?.toFixed(2) || '0.00'}</span>
                   </div>
                 </div>
+              </div>
+
+              {/* Comprobantes de pago */}
+              <div className="mt-6">
+                <PaymentProofViewer paymentProofs={selectedOrder.paymentProofs} />
               </div>
             </div>
           </div>

@@ -87,6 +87,13 @@ const ProductDetail = () => {
       imagenPrincipalURL: product.mainImageUrl
     };
 
+            // Verificar stock disponible
+    const stockDisponible = product.stock || 0;
+    if (stockDisponible < quantity) {
+      alert(`No hay suficiente stock. Solo quedan ${stockDisponible} unidades disponibles.`);
+      return;
+    }
+
     const cartVariant = {
       id: `${selectedSize || 'default'}-${selectedColor || 'default'}`,
       talla: selectedSize || 'Talla única',
@@ -94,10 +101,8 @@ const ProductDetail = () => {
       precio: product.basePrice || 0,
       precioOriginal: product.basePrice || 0,
       descuento: 0,
-      stock: 10 // Valor por defecto
-    };
-
-    // Agregar múltiples cantidades si es necesario
+      stock: stockDisponible
+    };    // Agregar múltiples cantidades si es necesario
     for (let i = 0; i < quantity; i++) {
       addToCart(cartProduct, cartVariant);
     }
@@ -250,9 +255,28 @@ const ProductDetail = () => {
             {/* Precio */}
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="text-3xl font-bold text-cyan-600">
-                ${product.basePrice?.toFixed(2)}
+                Bs. {product.basePrice?.toFixed(2)}
               </div>
               <p className="text-gray-600 text-sm mt-1">Precio incluye envío gratis</p>
+              
+              {/* Información de stock */}
+              <div className="mt-3 flex items-center space-x-2">
+                {product.stock > 0 ? (
+                  <>
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-green-600 font-medium">
+                      {product.stock} unidades en stock
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <span className="text-sm text-red-600 font-medium">
+                      Sin stock disponible
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Descripción */}
@@ -312,33 +336,61 @@ const ProductDetail = () => {
                 <div className="flex items-center border border-gray-300 rounded-lg">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="p-2 text-gray-600 hover:text-gray-800"
+                    disabled={quantity <= 1}
+                    className="p-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
                   <span className="px-4 py-2 font-medium">{quantity}</span>
                   <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="p-2 text-gray-600 hover:text-gray-800"
+                    onClick={() => setQuantity(Math.min(product.stock || 0, quantity + 1))}
+                    disabled={quantity >= (product.stock || 0)}
+                    className="p-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
-                <span className="text-gray-600">En stock</span>
+                <div className="flex flex-col">
+                  {product.stock > 0 ? (
+                    <>
+                      <span className="text-green-600 font-medium">En stock</span>
+                      <span className="text-xs text-gray-500">
+                        Máximo {product.stock} unidades
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-red-600 font-medium">Sin stock</span>
+                  )}
+                </div>
               </div>
+              {product.stock <= 5 && product.stock > 0 && (
+                <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-yellow-800 text-sm">
+                    ⚠️ ¡Pocas unidades disponibles! Solo quedan {product.stock} en stock.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Botones de acción */}
             <div className="space-y-4">
               <button
                 onClick={handleAddToCart}
-                className={`w-full py-4 px-6 rounded-lg font-semibold text-lg transition-all ${
-                  addedToCart
+                disabled={!product.stock || product.stock === 0}
+                className={`w-full py-4 px-6 rounded-lg font-semibold text-lg transition-all inline-flex items-center justify-center ${
+                  !product.stock || product.stock === 0
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : addedToCart
                     ? 'bg-green-600 text-white'
                     : 'bg-cyan-600 hover:bg-cyan-700 text-white'
-                } inline-flex items-center justify-center`}
+                }`}
               >
-                {addedToCart ? (
+                {!product.stock || product.stock === 0 ? (
+                  <>
+                    <ShoppingCart className="w-5 h-5 mr-2" />
+                    Sin stock disponible
+                  </>
+                ) : addedToCart ? (
                   <>
                     <Check className="w-5 h-5 mr-2" />
                     ¡Agregado al carrito!

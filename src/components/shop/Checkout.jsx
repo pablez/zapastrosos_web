@@ -18,9 +18,13 @@ import {
   Smartphone,
   QrCode,
   Copy,
-  AlertCircle
+  AlertCircle,
+  Map
 } from 'lucide-react';
 import YapeQRCode from './YapeQRCode';
+import InvoiceGenerator from './InvoiceGenerator';
+import MapLocationPicker from '../shared/MapLocationPicker';
+import LocationDisplay from '../shared/LocationDisplay';
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -44,10 +48,13 @@ const Checkout = () => {
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderId, setOrderId] = useState('');
   const [showYapeQR, setShowYapeQR] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [completedOrderData, setCompletedOrderData] = useState(null);
 
   // Calcular totales
   const subtotal = getCartTotal();
-  const shipping = subtotal > 50 ? 0 : 5.99;
+  const shipping = subtotal > 200 ? 0 : 15; // Envío gratis por encima de Bs. 200
   const total = subtotal + shipping;
 
   // Redireccionar si no hay productos en el carrito
@@ -115,7 +122,8 @@ const Checkout = () => {
           phone: formData.phone,
           address: formData.address,
           city: formData.city,
-          zipCode: formData.zipCode
+          zipCode: formData.zipCode,
+          location: selectedLocation || null // Agregar información de ubicación
         },
         items: items.map(item => ({
           productId: item.tenisId,
@@ -134,6 +142,7 @@ const Checkout = () => {
         },
         paymentMethod: formData.paymentMethod,
         status: formData.paymentMethod === 'yape' ? 'pending_payment' : 'pending',
+        paymentProofs: [], // Array para almacenar comprobantes de pago
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -147,6 +156,12 @@ const Checkout = () => {
       const docRef = await addDoc(collection(db, 'orders'), orderData);
       console.log('Pedido creado exitosamente:', docRef.id);
       setOrderId(docRef.id);
+      
+      // Guardar datos completos del pedido para el comprobante
+      setCompletedOrderData({
+        ...orderData,
+        id: docRef.id
+      });
       
       if (formData.paymentMethod === 'yape') {
         setShowYapeQR(true);
@@ -166,9 +181,82 @@ const Checkout = () => {
 
   // Confirmar pago con Yape
   const handleYapePaymentConfirm = () => {
+    // Asegurar que tenemos los datos del pedido
+    if (!completedOrderData) {
+      console.error('No se encontraron datos del pedido');
+      return;
+    }
+    
     setOrderComplete(true);
     clearCart();
     setShowYapeQR(false);
+  };
+
+  // Manejar subida de comprobante de pago
+  const handleProofUploaded = async (downloadURL, fileName, uploadResult) => {
+    try {
+      console.log('Recibiendo datos de comprobante:', { downloadURL, fileName, uploadResult });
+      
+      // Validar que tenemos los datos necesarios
+      if (!uploadResult) {
+        throw new Error('No se recibieron datos del archivo subido');
+      }
+      
+      // Actualizar el pedido con el comprobante
+      const { updateDoc, doc } = await import('firebase/firestore');
+      
+      const proofData = {
+        url: downloadURL,
+        fileName: fileName,
+        fileId: uploadResult.fileId || null, // ID de ImageKit para poder eliminar después
+        service: 'imagekit',
+        uploadedAt: new Date(),
+        uploadedBy: user?.uid || 'guest',
+        size: uploadResult.size || 0,
+        type: uploadResult.type || 'unknown'
+      };
+
+      console.log('Guardando datos del comprobante:', proofData);
+
+      // Actualizar el documento del pedido
+      await updateDoc(doc(db, 'orders', orderId), {
+        paymentProofs: [proofData], // Por ahora solo permitimos un comprobante
+        updatedAt: new Date()
+      });
+
+      console.log('Comprobante agregado al pedido exitosamente:', orderId);
+      
+      // Opcional: Mostrar notificación de éxito
+      alert('¡Comprobante subido exitosamente! Tu pedido será procesado pronto.');
+      
+    } catch (error) {
+      console.error('Error actualizando pedido con comprobante:', error);
+      alert('El comprobante se subió pero hubo un error al vincularlo al pedido.');
+    }
+  };
+
+  // Manejar generación de comprobante
+  const handleInvoiceGenerated = async (invoiceData) => {
+    try {
+      // Guardar información del comprobante en Firestore
+      const { updateDoc, doc } = await import('firebase/firestore');
+      
+      await updateDoc(doc(db, 'orders', orderId), {
+        invoice: {
+          number: invoiceData.invoiceNumber,
+          fileName: invoiceData.fileName,
+          generatedAt: invoiceData.generatedAt,
+          total: invoiceData.total
+        },
+        updatedAt: new Date()
+      });
+
+      console.log('Información de comprobante guardada:', invoiceData);
+      
+    } catch (error) {
+      console.error('Error guardando información de comprobante:', error);
+      // No bloquear la descarga si no se puede guardar en Firebase
+    }
   };
 
   // Copiar número de Yape
@@ -177,33 +265,62 @@ const Checkout = () => {
     alert('Número copiado al portapapeles');
   };
 
+  // Manejar selección de ubicación
+  const handleLocationConfirm = (locationData) => {
+    setSelectedLocation(locationData);
+    setShowMapPicker(false);
+  };
+
+  // Abrir selector de mapa
+  const openMapPicker = () => {
+    setShowMapPicker(true);
+  };
+
   if (orderComplete) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Check className="w-8 h-8 text-green-600" />
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-2xl mx-auto px-4">
+          {/* Confirmación del pedido */}
+          <div className="bg-white rounded-lg shadow-lg p-8 text-center mb-6">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Check className="w-8 h-8 text-green-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              ¡Pedido Confirmado!
+            </h1>
+            <p className="text-gray-600 mb-6">
+              Tu pedido #{orderId.slice(-8)} ha sido procesado exitosamente.
+              Recibirás un email de confirmación en breve.
+            </p>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            ¡Pedido Confirmado!
-          </h1>
-          <p className="text-gray-600 mb-6">
-            Tu pedido #{orderId.slice(-8)} ha sido procesado exitosamente.
-            Recibirás un email de confirmación en breve.
-          </p>
-          <div className="space-y-3">
-            <Link
-              to="/catalogo"
-              className="w-full bg-cyan-600 text-white py-3 rounded-lg hover:bg-cyan-700 inline-flex items-center justify-center font-medium"
-            >
-              Seguir comprando
-            </Link>
-            <Link
-              to="/"
-              className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 inline-flex items-center justify-center font-medium"
-            >
-              Volver al inicio
-            </Link>
+
+          {/* Generador de comprobante */}
+          {completedOrderData && (
+            <div className="mb-6">
+              <InvoiceGenerator
+                orderData={completedOrderData}
+                customerData={formData}
+                onInvoiceGenerated={handleInvoiceGenerated}
+              />
+            </div>
+          )}
+
+          {/* Botones de navegación */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="space-y-3">
+              <Link
+                to="/catalogo"
+                className="w-full bg-cyan-600 text-white py-3 rounded-lg hover:bg-cyan-700 inline-flex items-center justify-center font-medium"
+              >
+                Seguir comprando
+              </Link>
+              <Link
+                to="/"
+                className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 inline-flex items-center justify-center font-medium"
+              >
+                Volver al inicio
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -236,7 +353,11 @@ const Checkout = () => {
             </div>
             
             {/* QR Code estático */}
-            <YapeQRCode />
+            <YapeQRCode 
+              userId={user?.uid || 'guest'}
+              orderId={orderId}
+              onProofUploaded={handleProofUploaded}
+            />
             
             <div className="text-center">
               <p className="text-sm text-gray-600 mb-2">Escanea este QR para pagar a:</p>
@@ -265,7 +386,7 @@ const Checkout = () => {
               <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
               <div>
                 <h3 className="font-medium text-yellow-900 mb-1">
-                  Monto a pagar: S/ {total.toFixed(2)}
+                  Monto a pagar: Bs. {total.toFixed(2)}
                 </h3>
                 <p className="text-sm text-yellow-700">
                   Una vez realizado el pago, confirma para continuar con tu pedido.
@@ -305,7 +426,7 @@ const Checkout = () => {
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Finalizar Compra</h1>
                 <p className="text-gray-600">
-                  {getCartItemsCount()} producto{getCartItemsCount() !== 1 ? 's' : ''} • Total: ${total.toFixed(2)}
+                  {getCartItemsCount()} producto{getCartItemsCount() !== 1 ? 's' : ''} • Total: Bs. {total.toFixed(2)}
                 </p>
               </div>
             </div>
@@ -504,6 +625,44 @@ const Checkout = () => {
                       )}
                     </div>
                   </div>
+                  
+                  {/* Selector de ubicación en mapa */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Ubicación exacta (Opcional)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={openMapPicker}
+                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-cyan-600 bg-cyan-50 rounded-md hover:bg-cyan-100 transition-colors"
+                      >
+                        <Map className="w-4 h-4 mr-1" />
+                        {selectedLocation ? 'Cambiar ubicación' : 'Seleccionar en mapa'}
+                      </button>
+                    </div>
+                    
+                    {selectedLocation ? (
+                      <LocationDisplay 
+                        location={selectedLocation}
+                        onEdit={openMapPicker}
+                      />
+                    ) : (
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                        <Map className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-500">
+                          Selecciona tu ubicación exacta en el mapa para un delivery más preciso
+                        </p>
+                        <button
+                          type="button"
+                          onClick={openMapPicker}
+                          className="mt-2 text-cyan-600 hover:text-cyan-700 text-sm font-medium"
+                        >
+                          Abrir mapa
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -602,7 +761,7 @@ const Checkout = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-medium text-gray-900">
-                        ${(item.precio * item.quantity).toFixed(2)}
+                        Bs. {(item.precio * item.quantity).toFixed(2)}
                       </p>
                       <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
                     </div>
@@ -614,7 +773,7 @@ const Checkout = () => {
               <div className="space-y-2 pb-4 border-b border-gray-200">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>Bs. {subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Envío</span>
@@ -622,13 +781,13 @@ const Checkout = () => {
                     {shipping === 0 ? (
                       <span className="text-green-600 font-medium">¡Gratis!</span>
                     ) : (
-                      `$${shipping.toFixed(2)}`
+                      `Bs. ${shipping.toFixed(2)}`
                     )}
                   </span>
                 </div>
                 <div className="flex justify-between text-lg font-bold text-gray-900 pt-2">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>Bs. {total.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -665,7 +824,7 @@ const Checkout = () => {
                     Procesando...
                   </div>
                 ) : (
-                  `Pagar $${total.toFixed(2)}`
+                  `Pagar Bs. ${total.toFixed(2)}`
                 )}
               </button>
               
@@ -676,6 +835,15 @@ const Checkout = () => {
           </div>
         </div>
       </div>
+      
+      {/* Modal del selector de ubicación */}
+      {showMapPicker && (
+        <MapLocationPicker
+          onLocationConfirm={handleLocationConfirm}
+          onClose={() => setShowMapPicker(false)}
+          initialLocation={selectedLocation?.coordinates}
+        />
+      )}
     </div>
   );
 };
