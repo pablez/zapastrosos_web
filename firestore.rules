@@ -1,0 +1,78 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Función para verificar si el usuario es admin
+    function isAdmin() {
+      return request.auth != null && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Función para verificar si está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Función para verificar si es el owner del documento
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // PRODUCTOS - Solo lectura pública, escritura solo admins
+    match /products/{productId} {
+      allow read: if true; // Cualquiera puede ver productos
+      allow write: if isAdmin(); // Solo admins pueden crear/modificar productos
+    }
+
+    // CATEGORÍAS - Solo lectura pública, escritura solo admins
+    match /categories/{categoryId} {
+      allow read: if true; // Cualquiera puede ver categorías
+      allow write: if isAdmin(); // Solo admins pueden crear/modificar categorías
+    }
+
+    // USUARIOS - Solo el propio usuario y admins
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin(); // Solo admins pueden eliminar usuarios
+    }
+
+    // CARRITOS - Solo el propio usuario
+    match /carts/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // PEDIDOS - Reglas temporales para debugging (muy permisivas)
+    match /orders/{orderId} {
+      allow read, write: if true; // Permitir todo temporalmente
+    }
+
+    // REVIEWS - Los usuarios pueden crear reviews de sus pedidos
+    match /reviews/{reviewId} {
+      allow read: if true; // Cualquiera puede leer reviews
+      allow create: if isAuthenticated() && 
+                       request.auth.uid == resource.data.userId;
+      allow update: if isOwner(resource.data.userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // CONFIGURACIÓN - Solo admins
+    match /config/{configId} {
+      allow read: if true; // Configuración pública (como info de la tienda)
+      allow write: if isAdmin();
+    }
+
+    // ANALYTICS - Solo admins
+    match /analytics/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // Denegar todo lo demás por defecto
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

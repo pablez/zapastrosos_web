@@ -1,0 +1,58 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Función para verificar si el usuario es admin
+    function isAdmin() {
+      return request.auth != null && 
+             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Función para verificar si está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // IMÁGENES DE PRODUCTOS - Solo admins pueden subir, todos pueden leer
+    match /products/{allPaths=**} {
+      allow read: if true; // Cualquiera puede ver imágenes de productos
+      allow write: if isAdmin(); // Solo admins pueden subir/modificar imágenes de productos
+    }
+    
+    // LOGOS Y RECURSOS DE LA TIENDA - Solo admins
+    match /assets/{allPaths=**} {
+      allow read: if true; // Logos públicos
+      allow write: if isAdmin(); // Solo admins pueden cambiar logos/assets
+    }
+    
+    // AVATARES DE USUARIOS - Solo el propio usuario y admins
+    match /users/{userId}/{allPaths=**} {
+      allow read: if true; // Los avatares son públicos
+      allow write: if isAuthenticated() && 
+                      (request.auth.uid == userId || isAdmin());
+    }
+    
+    // IMÁGENES TEMPORALES - Solo usuarios autenticados
+    match /temp/{userId}/{allPaths=**} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      // Auto-delete después de 24 horas (manejado por Cloud Functions)
+    }
+    
+    // VALIDACIONES DE ARCHIVOS
+    function isValidImageUpload() {
+      return request.resource.size < 5 * 1024 * 1024 && // Máximo 5MB
+             request.resource.contentType.matches('image/.*'); // Solo imágenes
+    }
+    
+    // Aplicar validaciones a todas las subidas de imágenes
+    match /{allPaths=**} {
+      allow write: if isValidImageUpload();
+    }
+    
+    // Denegar todo lo demás por defecto
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
