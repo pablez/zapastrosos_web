@@ -78,7 +78,7 @@ const InvoiceGenerator = ({ orderData, customerData, onInvoiceGenerated }) => {
               <p style="margin: 8px 0; font-size: 1em;"><strong>Número:</strong> ${invoiceNumber}</p>
               <p style="margin: 8px 0; font-size: 1em;"><strong>Fecha:</strong> ${formatDate(orderData.createdAt || new Date())}</p>
               <p style="margin: 8px 0; font-size: 1em;"><strong>Pedido:</strong> #${orderData.id?.slice(-8) || 'N/A'}</p>
-              <p style="margin: 8px 0; font-size: 1em;"><strong>Método Pago:</strong> ${orderData.paymentMethod || 'Yape'}</p>
+              <p style="margin: 8px 0; font-size: 1em;"><strong>Método Pago:</strong> ${orderData.paymentMethod || 'Pago por QR'}</p>
             </div>
             <div style="width: 50%; background-color: white; padding: 15px; border-radius: 6px; border: 1px solid #ddd;">
               <h3 style="color: #ff6b35; margin: 0 0 12px 0; font-size: 1.3em; border-bottom: 2px solid #ff6b35; padding-bottom: 5px;">👤 DATOS DEL CLIENTE</h3>

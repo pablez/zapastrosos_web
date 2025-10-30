@@ -15,7 +15,11 @@ import {
   RotateCcw,
   Check,
   Minus,
-  Plus
+  Plus,
+  Eye,
+  CreditCard,
+  Menu,
+  X
 } from 'lucide-react';
 import ThemeToggle from '../ui/ThemeToggle';
 
@@ -32,6 +36,7 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const totalItems = getCartItemsCount();
 
@@ -153,63 +158,185 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      {/* Navegación */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <nav className="flex items-center space-x-2 text-sm">
-              <Link to="/" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">Inicio</Link>
-              <span className="text-gray-400 dark:text-gray-500">/</span>
-              <Link to="/catalogo" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">Catálogo</Link>
-              <span className="text-gray-400 dark:text-gray-500">/</span>
-              <span className="text-gray-900 dark:text-white font-medium">{product.name}</span>
-            </nav>
+      {/* Navegación Responsiva Mejorada */}
+      <div className="bg-white dark:bg-gray-800 shadow-lg border-b dark:border-gray-700 transition-colors duration-300 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex justify-between items-center py-4">
+            {/* Logo y Breadcrumbs */}
+            <div className="flex items-center space-x-6">
+              <Link to="/" className="flex items-center space-x-2 text-xl font-bold text-cyan-600 dark:text-cyan-400">
+                <div className="bg-cyan-600 text-white p-2 rounded-lg">
+                  <ShoppingCart className="w-6 h-6" />
+                </div>
+                <span>Zapastroso</span>
+              </Link>
+              <nav className="flex items-center space-x-2 text-sm">
+                <Link to="/" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors">Inicio</Link>
+                <span className="text-gray-400 dark:text-gray-500">/</span>
+                <Link to="/catalogo" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors">Catálogo</Link>
+                <span className="text-gray-400 dark:text-gray-500">/</span>
+                <span className="text-gray-900 dark:text-white font-medium truncate max-w-xs">{product.name}</span>
+              </nav>
+            </div>
+            
+            {/* Desktop Actions */}
             <div className="flex items-center space-x-4">
               <ThemeToggle size={20} />
               <Link 
                 to="/carrito"
-                className="bg-gray-600 dark:bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 inline-flex items-center relative transition-colors duration-300"
+                className="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2.5 rounded-lg inline-flex items-center relative transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
               >
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                Carrito
+                <ShoppingCart className="w-5 h-5 mr-2" />
+                <span className="font-medium">Carrito</span>
                 {totalItems > 0 && (
-                  <span className="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="ml-3 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse">
                     {totalItems > 9 ? '9+' : totalItems}
                   </span>
                 )}
               </Link>
             </div>
           </div>
+
+          {/* Mobile Navigation */}
+          <div className="md:hidden py-3">
+            <div className="flex justify-between items-center">
+              {/* Mobile Logo and Back Button */}
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                <Link 
+                  to="/catalogo"
+                  className="text-cyan-600 hover:text-cyan-800 dark:text-cyan-400 dark:hover:text-cyan-300 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
+                  title="Volver al catálogo"
+                >
+                  <ArrowLeft className="w-6 h-6" />
+                </Link>
+                <div className="min-w-0 flex-1">
+                  <Link to="/" className="flex items-center space-x-2">
+                    <div className="bg-cyan-600 text-white p-1.5 rounded-md">
+                      <ShoppingCart className="w-4 h-4" />
+                    </div>
+                    <span className="text-lg font-bold text-cyan-600 dark:text-cyan-400">Zapastroso</span>
+                  </Link>
+                </div>
+              </div>
+              
+              {/* Mobile Actions */}
+              <div className="flex items-center space-x-1">
+                <Link 
+                  to="/carrito"
+                  className="text-gray-700 hover:text-cyan-600 dark:text-gray-300 dark:hover:text-cyan-400 transition duration-300 relative p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                  title="Ver carrito"
+                >
+                  <ShoppingCart className="w-6 h-6" />
+                  {totalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-bounce">
+                      {totalItems > 9 ? '9+' : totalItems}
+                    </span>
+                  )}
+                </Link>
+                <div className="p-2">
+                  <ThemeToggle size={20} />
+                </div>
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className={`text-gray-700 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all duration-300 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 ${mobileMenuOpen ? 'bg-gray-100 dark:bg-gray-700 text-cyan-600 dark:text-cyan-400' : ''}`}
+                  aria-label="Menú de navegación"
+                >
+                  <div className="relative w-6 h-6">
+                    <span className={`absolute top-1.5 left-0 w-6 h-0.5 bg-current transition-all duration-300 transform ${mobileMenuOpen ? 'rotate-45 top-3' : ''}`}></span>
+                    <span className={`absolute top-3 left-0 w-6 h-0.5 bg-current transition-all duration-300 ${mobileMenuOpen ? 'opacity-0' : ''}`}></span>
+                    <span className={`absolute top-4.5 left-0 w-6 h-0.5 bg-current transition-all duration-300 transform ${mobileMenuOpen ? '-rotate-45 top-3' : ''}`}></span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Product Title Mobile */}
+            <div className="mt-3 px-2">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">{product.name}</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{product.brand}</p>
+            </div>
+
+            {/* Mobile Menu Dropdown */}
+            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${mobileMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'}`}>
+              <div className="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4 pb-2">
+                <nav className="space-y-2">
+                  <Link 
+                    to="/" 
+                    className="flex items-center space-x-3 text-gray-700 hover:text-cyan-600 dark:text-gray-300 dark:hover:text-cyan-400 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className="text-lg">🏠</span>
+                    <span className="font-medium">Inicio</span>
+                  </Link>
+                  <Link 
+                    to="/catalogo" 
+                    className="flex items-center space-x-3 text-gray-700 hover:text-cyan-600 dark:text-gray-300 dark:hover:text-cyan-400 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className="text-lg">📚</span>
+                    <span className="font-medium">Catálogo</span>
+                  </Link>
+                  <Link 
+                    to="/carrito" 
+                    className="flex items-center space-x-3 text-gray-700 hover:text-cyan-600 dark:text-gray-300 dark:hover:text-cyan-400 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <div className="relative">
+                      <span className="text-lg">�</span>
+                      {totalItems > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                          {totalItems > 9 ? '9+' : totalItems}
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-medium">
+                      Carrito 
+                      {totalItems > 0 && <span className="text-cyan-600 dark:text-cyan-400">({totalItems})</span>}
+                    </span>
+                  </Link>
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-2 mt-2">
+                    <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold">
+                      Navegación
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-300 px-3 py-1">
+                      Inicio → Catálogo → <span className="font-medium text-gray-900 dark:text-white">{product.name}</span>
+                    </div>
+                  </div>
+                </nav>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
           {/* Galería de imágenes */}
-          <div className="space-y-4">
+          <div className="space-y-4 order-1 lg:order-1">
             {/* Imagen principal */}
-            <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+            <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
               <img
                 src={allImages[selectedImage] || '/placeholder-image.jpg'}
                 alt={product.name}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0iI2NjYyIgdmlld0JveD0iMCAwIDI0IDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPjwvc3ZnPg==';
+                  e.target.src = 'https://via.placeholder.com/500x500?text=Imagen+No+Disponible';
                 }}
               />
             </div>
 
             {/* Miniaturas */}
             {allImages.length > 1 && (
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                 {allImages.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
-                    className={`aspect-square rounded-lg overflow-hidden border-2 ${
+                    className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
                       selectedImage === index 
-                        ? 'border-cyan-600' 
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-cyan-600 dark:border-cyan-400' 
+                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                     }`}
                   >
                     <img
@@ -227,57 +354,57 @@ const ProductDetail = () => {
           </div>
 
           {/* Información del producto */}
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6 order-2 lg:order-2">
             {/* Header */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                  {product.category}
-                </span>
-                <div className="flex items-center space-x-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300">
+                    {product.category}
+                  </span>
                   {/* Badge de tipo de producto */}
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                     product.tipo === 'nuevo' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-yellow-100 text-yellow-800'
+                      ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300' 
+                      : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300'
                   }`}>
                     {product.tipo === 'nuevo' ? '✨ Nuevo' : '♻️ Medio Uso'}
                   </span>
                   {/* Badge de descuento */}
                   {product.descuento > 0 && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300">
                       -{product.descuento}% OFF
                     </span>
                   )}
                 </div>
                 <div className="flex space-x-2">
-                  <button className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+                  <button className="p-2 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 transition-colors">
                     <Heart className="w-5 h-5" />
                   </button>
-                  <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                  <button className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors">
                     <Share2 className="w-5 h-5" />
                   </button>
                 </div>
               </div>
               
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
-              <p className="text-xl text-gray-600">{product.brand}</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">{product.name}</h1>
+              <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300">{product.brand}</p>
               
-              <div className="flex items-center mt-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-4">
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                    <Star key={i} className="w-4 h-4 md:w-5 md:h-5 text-yellow-400 fill-current" />
                   ))}
-                  <span className="ml-2 text-gray-600">(4.8) • 127 reseñas</span>
+                  <span className="ml-2 text-sm md:text-base text-gray-600 dark:text-gray-300">(4.8) • 127 reseñas</span>
                 </div>
               </div>
             </div>
 
             {/* Precio */}
-            <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
               {product.descuento > 0 ? (
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="text-3xl font-bold text-red-600">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                  <div className="text-2xl md:text-3xl font-bold text-red-600 dark:text-red-400">
                     Bs. {(product.basePrice * (1 - product.descuento / 100)).toFixed(2)}
                   </div>
                   <div className="text-lg text-gray-500 line-through">
@@ -298,21 +425,21 @@ const ProductDetail = () => {
                   ¡Ahorras Bs. {(product.basePrice * product.descuento / 100).toFixed(2)}!
                 </p>
               )}
-              <p className="text-gray-600 text-sm mt-1">Precio incluye envío gratis</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">Precio incluye envío gratis</p>
               
               {/* Información de stock */}
               <div className="mt-3 flex items-center space-x-2">
                 {product.stock > 0 ? (
                   <>
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-green-600 font-medium">
+                    <span className="text-sm text-green-600 dark:text-green-400 font-medium">
                       {product.stock} unidades en stock
                     </span>
                   </>
                 ) : (
                   <>
                     <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                    <span className="text-sm text-red-600 font-medium">
+                    <span className="text-sm text-red-600 dark:text-red-400 font-medium">
                       Sin stock disponible
                     </span>
                   </>
@@ -322,21 +449,23 @@ const ProductDetail = () => {
 
             {/* Descripción */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Descripción</h3>
-              <p className="text-gray-700 leading-relaxed">{product.description}</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Descripción</h3>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm md:text-base">{product.description}</p>
             </div>
 
             {/* Información del tipo de producto */}
-            <div className={`p-4 rounded-lg border-l-4 ${
+            <div className={`p-3 md:p-4 rounded-lg border-l-4 ${
               product.tipo === 'nuevo' 
-                ? 'bg-green-50 border-green-500' 
-                : 'bg-yellow-50 border-yellow-500'
+                ? 'bg-green-50 dark:bg-green-900/20 border-green-500' 
+                : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500'
             }`}>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 {product.tipo === 'nuevo' ? '✨ Producto Nuevo' : '♻️ Producto de Medio Uso'}
               </h3>
               <p className={`text-sm ${
-                product.tipo === 'nuevo' ? 'text-green-700' : 'text-yellow-700'
+                product.tipo === 'nuevo' 
+                  ? 'text-green-700 dark:text-green-300' 
+                  : 'text-yellow-700 dark:text-yellow-300'
               }`}>
                 {product.tipo === 'nuevo' 
                   ? 'Este producto es completamente nuevo, sin uso previo. Incluye garantía completa del fabricante y embalaje original.'
@@ -348,16 +477,16 @@ const ProductDetail = () => {
             {/* Tallas */}
             {product.sizes && product.sizes.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Talla</h3>
-                <div className="grid grid-cols-4 gap-2">
+                <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-3">Talla</h3>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                   {product.sizes.map((size) => (
                     <button
                       key={size}
                       onClick={() => setSelectedSize(size)}
-                      className={`py-3 px-4 border rounded-lg text-center font-medium transition-colors ${
+                      className={`py-2 md:py-3 px-2 md:px-4 border rounded-lg text-center font-medium transition-colors ${
                         selectedSize === size
-                          ? 'border-cyan-600 bg-cyan-50 text-cyan-700'
-                          : 'border-gray-300 hover:border-gray-400'
+                          ? 'border-cyan-600 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
                       }`}
                     >
                       {size}
@@ -370,16 +499,16 @@ const ProductDetail = () => {
             {/* Colores */}
             {product.colors && product.colors.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Color</h3>
+                <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-3">Color</h3>
                 <div className="flex flex-wrap gap-2">
                   {product.colors.map((color) => (
                     <button
                       key={color}
                       onClick={() => setSelectedColor(color)}
-                      className={`py-2 px-4 border rounded-lg font-medium transition-colors ${
+                      className={`py-2 px-3 md:px-4 border rounded-lg font-medium transition-colors text-sm md:text-base ${
                         selectedColor === color
-                          ? 'border-cyan-600 bg-cyan-50 text-cyan-700'
-                          : 'border-gray-300 hover:border-gray-400'
+                          ? 'border-cyan-600 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
                       }`}
                     >
                       {color}
@@ -391,21 +520,21 @@ const ProductDetail = () => {
 
             {/* Cantidad */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Cantidad</h3>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center border border-gray-300 rounded-lg">
+              <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-3">Cantidad</h3>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg w-fit">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     disabled={quantity <= 1}
-                    className="p-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
-                  <span className="px-4 py-2 font-medium">{quantity}</span>
+                  <span className="px-3 md:px-4 py-2 font-medium text-gray-900 dark:text-white min-w-[3rem] text-center">{quantity}</span>
                   <button
                     onClick={() => setQuantity(Math.min(product.stock || 0, quantity + 1))}
                     disabled={quantity >= (product.stock || 0)}
-                    className="p-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -413,19 +542,19 @@ const ProductDetail = () => {
                 <div className="flex flex-col">
                   {product.stock > 0 ? (
                     <>
-                      <span className="text-green-600 font-medium">En stock</span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-green-600 dark:text-green-400 font-medium text-sm md:text-base">En stock</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
                         Máximo {product.stock} unidades
                       </span>
                     </>
                   ) : (
-                    <span className="text-red-600 font-medium">Sin stock</span>
+                    <span className="text-red-600 dark:text-red-400 font-medium text-sm md:text-base">Sin stock</span>
                   )}
                 </div>
               </div>
               {product.stock <= 5 && product.stock > 0 && (
-                <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-yellow-800 text-sm">
+                <div className="mt-2 p-2 md:p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <p className="text-yellow-800 dark:text-yellow-300 text-sm">
                     ⚠️ ¡Pocas unidades disponibles! Solo quedan {product.stock} en stock.
                   </p>
                 </div>
@@ -433,13 +562,13 @@ const ProductDetail = () => {
             </div>
 
             {/* Botones de acción */}
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               <button
                 onClick={handleAddToCart}
                 disabled={!product.stock || product.stock === 0}
-                className={`w-full py-4 px-6 rounded-lg font-semibold text-lg transition-all inline-flex items-center justify-center ${
+                className={`w-full py-3 md:py-4 px-4 md:px-6 rounded-lg font-semibold text-base md:text-lg transition-all inline-flex items-center justify-center ${
                   !product.stock || product.stock === 0
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                     : addedToCart
                     ? 'bg-green-600 text-white'
                     : 'bg-cyan-600 hover:bg-cyan-700 text-white'
@@ -447,7 +576,7 @@ const ProductDetail = () => {
               >
                 {!product.stock || product.stock === 0 ? (
                   <>
-                    <ShoppingCart className="w-5 h-5 mr-2" />
+                    <X className="w-5 h-5 mr-2" />
                     Sin stock disponible
                   </>
                 ) : addedToCart ? (
@@ -463,28 +592,46 @@ const ProductDetail = () => {
                 )}
               </button>
               
-              <button 
-                onClick={() => navigate('/carrito')}
-                className="w-full py-4 px-6 border border-gray-300 rounded-lg font-semibold text-lg hover:bg-gray-50 transition-colors"
-              >
-                Ver carrito
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => navigate('/cart')}
+                  className="flex-1 py-2 md:py-3 px-4 md:px-6 border-2 border-cyan-600 text-cyan-600 dark:border-cyan-400 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 rounded-lg font-medium transition-all inline-flex items-center justify-center text-sm md:text-base"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Ver carrito
+                </button>
+                <button
+                  onClick={() => {
+                    addToCart({ ...product, quantity, selectedSize, selectedColor });
+                    navigate('/cart');
+                  }}
+                  disabled={!product.stock || product.stock === 0}
+                  className={`flex-1 py-2 md:py-3 px-4 md:px-6 rounded-lg font-medium transition-all inline-flex items-center justify-center text-sm md:text-base ${
+                    !product.stock || product.stock === 0
+                      ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                      : 'bg-orange-600 hover:bg-orange-700 text-white'
+                  }`}
+                >
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Comprar ahora
+                </button>
+              </div>
             </div>
 
             {/* Beneficios */}
-            <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Beneficios</h3>
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 md:pt-6">
+              <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-3 md:mb-4">Beneficios</h3>
               <div className="space-y-3">
-                <div className="flex items-center text-gray-700">
-                  <Truck className="w-5 h-5 text-green-600 mr-3" />
+                <div className="flex items-center text-gray-700 dark:text-gray-300 text-sm md:text-base">
+                  <Truck className="w-4 h-4 md:w-5 md:h-5 text-green-600 dark:text-green-400 mr-3 flex-shrink-0" />
                   <span>Envío gratis en pedidos superiores a $50</span>
                 </div>
-                <div className="flex items-center text-gray-700">
-                  <RotateCcw className="w-5 h-5 text-blue-600 mr-3" />
+                <div className="flex items-center text-gray-700 dark:text-gray-300 text-sm md:text-base">
+                  <RotateCcw className="w-4 h-4 md:w-5 md:h-5 text-blue-600 dark:text-blue-400 mr-3 flex-shrink-0" />
                   <span>Devoluciones gratuitas hasta 30 días</span>
                 </div>
-                <div className="flex items-center text-gray-700">
-                  <Shield className="w-5 h-5 text-purple-600 mr-3" />
+                <div className="flex items-center text-gray-700 dark:text-gray-300 text-sm md:text-base">
+                  <Shield className="w-4 h-4 md:w-5 md:h-5 text-purple-600 dark:text-purple-400 mr-3 flex-shrink-0" />
                   <span>Garantía de autenticidad del producto</span>
                 </div>
               </div>
@@ -492,13 +639,13 @@ const ProductDetail = () => {
 
             {/* Etiquetas */}
             {product.tags && product.tags.length > 0 && (
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Etiquetas</h3>
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 md:pt-6">
+                <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-3">Etiquetas</h3>
                 <div className="flex flex-wrap gap-2">
                   {product.tags.map((tag, index) => (
                     <span 
                       key={index}
-                      className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+                      className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs md:text-sm"
                     >
                       #{tag}
                     </span>

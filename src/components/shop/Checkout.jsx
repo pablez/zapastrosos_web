@@ -44,14 +44,14 @@ const Checkout = () => {
     address: "",
     city: "",
     zipCode: "",
-    paymentMethod: "yape", // 'yape', 'card', 'cash'
+    paymentMethod: "qr", // 'qr', 'card', 'cash'
   });
 
   const [errors, setErrors] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderId, setOrderId] = useState("");
-  const [showYapeQR, setShowYapeQR] = useState(false);
+  const [showQRCode, setShowQRCode] = useState(false);
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [completedOrderData, setCompletedOrderData] = useState(null);
@@ -147,7 +147,7 @@ const Checkout = () => {
         },
         paymentMethod: formData.paymentMethod,
         status:
-          formData.paymentMethod === "yape" ? "pending_payment" : "pending",
+          formData.paymentMethod === "qr" ? "pending_payment" : "pending",
         paymentProofs: [], // Array para almacenar comprobantes de pago
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -169,8 +169,8 @@ const Checkout = () => {
         id: docRef.id,
       });
 
-      if (formData.paymentMethod === "yape") {
-        setShowYapeQR(true);
+      if (formData.paymentMethod === "qr") {
+        setShowQRCode(true);
       } else {
         // Para otros métodos de pago, completar inmediatamente y reducir stock
         try {
@@ -235,8 +235,8 @@ const Checkout = () => {
     }
   };
 
-  // Confirmar pago con Yape
-  const handleYapePaymentConfirm = async () => {
+  // Confirmar pago con QR
+  const handleQRPaymentConfirm = async () => {
     // Asegurar que tenemos los datos del pedido
     if (!completedOrderData) {
       console.error("No se encontraron datos del pedido");
@@ -249,13 +249,13 @@ const Checkout = () => {
 
       setOrderComplete(true);
       clearCart();
-      setShowYapeQR(false);
+      setShowQRCode(false);
     } catch (error) {
       console.error("Error en confirmación de pago:", error);
       // Continuar con el proceso aunque haya error en stock
       setOrderComplete(true);
       clearCart();
-      setShowYapeQR(false);
+      setShowQRCode(false);
     }
   };
 
@@ -335,8 +335,8 @@ const Checkout = () => {
     }
   };
 
-  // Copiar número de Yape
-  const copyYapeNumber = () => {
+  // Copiar número de QR
+  const copyQRNumber = () => {
     navigator.clipboard.writeText("987654321");
     alert("Número copiado al portapapeles");
   };
@@ -403,7 +403,7 @@ const Checkout = () => {
     );
   }
 
-  if (showYapeQR) {
+  if (showQRCode) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8">
@@ -455,7 +455,7 @@ const Checkout = () => {
                     987-654-321
                   </span>
                   <button
-                    onClick={copyYapeNumber}
+                    onClick={copyQRNumber}
                     className="p-1 text-gray-400 hover:text-gray-600"
                     title="Copiar número"
                   >
@@ -509,7 +509,7 @@ const Checkout = () => {
           {/* Botones */}
           <div className="space-y-3">
             <button
-              onClick={handleYapePaymentConfirm}
+              onClick={handleQRPaymentConfirm}
               disabled={!proofUploaded}
               className={`w-full py-3 rounded-lg font-medium transition-colors ${
                 proofUploaded
@@ -520,7 +520,7 @@ const Checkout = () => {
               {proofUploaded ? "Ya realicé el pago" : "Sube tu comprobante primero"}
             </button>
             <button
-              onClick={() => setShowYapeQR(false)}
+              onClick={() => setShowQRCode(false)}
               className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 font-medium"
             >
               Cambiar método de pago
@@ -830,8 +830,8 @@ const Checkout = () => {
                       <input
                         type="radio"
                         name="paymentMethod"
-                        value="yape"
-                        checked={formData.paymentMethod === "yape"}
+                        value="qr"
+                        checked={formData.paymentMethod === "qr"}
                         onChange={handleInputChange}
                         className="text-purple-600 focus:ring-purple-500"
                       />

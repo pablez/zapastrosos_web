@@ -54,14 +54,15 @@ const Cart = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      {/* Header */}
+      {/* Header - Responsive */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
+          {/* Desktop Header */}
+          <div className="hidden md:flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <ShoppingBag className="w-8 h-8 text-cyan-600 dark:text-cyan-400" />
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Carrito de Compras</h1>
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">Carrito de Compras</h1>
                 <p className="text-gray-600 dark:text-gray-300">
                   {getCartItemsCount()} artículo{getCartItemsCount() !== 1 ? 's' : ''} en tu carrito
                 </p>
@@ -76,6 +77,28 @@ const Cart = () => {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Seguir comprando
               </Link>
+            </div>
+          </div>
+
+          {/* Mobile Header */}
+          <div className="md:hidden">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Link 
+                  to="/catalogo"
+                  className="text-cyan-600 hover:text-cyan-800 p-2"
+                  title="Seguir comprando"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </Link>
+                <div>
+                  <h1 className="text-lg font-bold text-gray-900 dark:text-white">Mi Carrito</h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    {getCartItemsCount()} productos
+                  </p>
+                </div>
+              </div>
+              <ThemeToggle size={20} />
             </div>
           </div>
         </div>

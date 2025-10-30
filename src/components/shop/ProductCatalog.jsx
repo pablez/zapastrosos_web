@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { db } from '../../services/firebase';
 import { useCart } from '../../contexts/CartContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Search, Filter, Grid, List, Star, ShoppingCart, Check, Percent, Sparkles, Recycle } from 'lucide-react';
+import { Search, Filter, Grid, List, Star, ShoppingCart, Check, Percent, Sparkles, Recycle, Menu, X, ArrowLeft } from 'lucide-react';
 import ThemeToggle from '../ui/ThemeToggle';
 
 const ProductCatalog = () => {
@@ -20,6 +20,7 @@ const ProductCatalog = () => {
   const [showOfertas, setShowOfertas] = useState(false);
   const [sortBy, setSortBy] = useState('name');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' o 'list'
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const totalItems = getCartItemsCount();
 
@@ -127,54 +128,99 @@ const ProductCatalog = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      {/* Header */}
+      {/* Header - Responsive Navigation */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          {/* Desktop Header */}
+          <div className="hidden md:flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Catálogo de Productos</h1>
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">Catálogo de Productos</h1>
               <p className="text-gray-600 dark:text-gray-300 mt-1">
                 {filteredAndSortedProducts.length} producto{filteredAndSortedProducts.length !== 1 ? 's' : ''} disponible{filteredAndSortedProducts.length !== 1 ? 's' : ''}
               </p>
             </div>
-          <div className="flex items-center space-x-4">
-            <ThemeToggle size={20} />
-            <Link 
-              to="/carrito"
-              className="bg-gray-600 dark:bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 inline-flex items-center relative transition-colors duration-300"
-            >
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              Carrito
-              {totalItems > 0 && (
-                <span className="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {totalItems > 9 ? '9+' : totalItems}
-                </span>
-              )}
-            </Link>
-            <Link 
-              to="/"
-              className="text-cyan-600 hover:text-cyan-800 font-medium"
-            >
-              ← Volver al inicio
-            </Link>
+            <div className="flex items-center space-x-4">
+              <ThemeToggle size={20} />
+              <Link 
+                to="/carrito"
+                className="bg-gray-600 dark:bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 inline-flex items-center relative transition-colors duration-300"
+              >
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                Carrito
+                {totalItems > 0 && (
+                  <span className="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {totalItems > 9 ? '9+' : totalItems}
+                  </span>
+                )}
+              </Link>
+              <Link 
+                to="/"
+                className="text-cyan-600 hover:text-cyan-800 font-medium inline-flex items-center"
+              >
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Inicio
+              </Link>
+            </div>
           </div>
+
+          {/* Mobile Header */}
+          <div className="md:hidden">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-3">
+                <Link 
+                  to="/"
+                  className="text-cyan-600 hover:text-cyan-800 p-2"
+                  title="Volver al inicio"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </Link>
+                <div>
+                  <h1 className="text-lg font-bold text-gray-900 dark:text-white">Catálogo</h1>
+                  <p className="text-xs text-gray-600 dark:text-gray-300">
+                    {filteredAndSortedProducts.length} productos
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Link 
+                  to="/carrito"
+                  className="text-gray-700 hover:text-cyan-600 dark:text-gray-300 dark:hover:text-cyan-400 transition duration-300 relative p-2"
+                >
+                  <ShoppingCart size={24} />
+                  {totalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                      {totalItems > 9 ? '9+' : totalItems}
+                    </span>
+                  )}
+                </Link>
+                <ThemeToggle size={20} />
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="text-gray-700 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors duration-300 p-2"
+                  aria-label="Filtros y opciones"
+                >
+                  {mobileMenuOpen ? <X size={24} /> : <Filter size={24} />}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Filtros y búsqueda */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-8 transition-colors duration-300">
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+        {/* Filtros y búsqueda - Desktop */}
+        <div className={`bg-white dark:bg-gray-800 p-4 md:p-6 rounded-lg shadow-md mb-6 md:mb-8 transition-colors duration-300 ${mobileMenuOpen ? 'block' : 'hidden md:block'}`}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-4">
             {/* Búsqueda */}
-            <div className="relative md:col-span-2">
+            <div className="relative sm:col-span-2 lg:col-span-2">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Buscar productos..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
               />
             </div>
 
@@ -184,7 +230,7 @@ const ProductCatalog = () => {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
               >
                 <option value="all">Todas las categorías</option>
                 {categories.map(category => (
@@ -200,7 +246,7 @@ const ProductCatalog = () => {
               <select
                 value={selectedTipo}
                 onChange={(e) => setSelectedTipo(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
               >
                 <option value="all">Todos los tipos</option>
                 <option value="nuevo">Zapatos Nuevos</option>
@@ -209,7 +255,7 @@ const ProductCatalog = () => {
             </div>
 
             {/* Filtro de ofertas */}
-            <div className="relative">
+            <div className="relative flex items-center justify-center">
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -217,7 +263,7 @@ const ProductCatalog = () => {
                   onChange={(e) => setShowOfertas(e.target.checked)}
                   className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
                 />
-                <span className="text-sm font-medium text-gray-700">Solo ofertas</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Solo ofertas</span>
                 <Percent className="w-4 h-4 text-red-500" />
               </label>
             </div>
@@ -226,7 +272,7 @@ const ProductCatalog = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
             >
               <option value="name">Ordenar por nombre</option>
               <option value="brand">Ordenar por marca</option>
@@ -235,38 +281,61 @@ const ProductCatalog = () => {
             </select>
 
             {/* Vista */}
-            <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+            <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`flex-1 px-4 py-2 flex items-center justify-center ${
+                className={`flex-1 px-4 py-2 flex items-center justify-center transition-colors ${
                   viewMode === 'grid' 
                     ? 'bg-cyan-600 text-white' 
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                    : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
                 }`}
               >
                 <Grid className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`flex-1 px-4 py-2 flex items-center justify-center ${
+                className={`flex-1 px-4 py-2 flex items-center justify-center transition-colors ${
                   viewMode === 'list' 
                     ? 'bg-cyan-600 text-white' 
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                    : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
                 }`}
               >
                 <List className="w-4 h-4" />
               </button>
             </div>
           </div>
+
+          {/* Botón para cerrar filtros en móvil */}
+          <div className="md:hidden pt-4 border-t border-gray-200 dark:border-gray-700">
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="w-full bg-cyan-600 text-white py-2 px-4 rounded-lg hover:bg-cyan-700 transition-colors"
+            >
+              Aplicar filtros
+            </button>
+          </div>
         </div>
+
+        {/* Botón flotante de filtros para móvil cuando está cerrado */}
+        {!mobileMenuOpen && (
+          <div className="md:hidden fixed bottom-6 right-6 z-10">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="bg-cyan-600 text-white p-4 rounded-full shadow-lg hover:bg-cyan-700 transition-colors"
+              aria-label="Abrir filtros"
+            >
+              <Filter className="w-6 h-6" />
+            </button>
+          </div>
+        )}
 
         {/* Lista/Grid de productos */}
         {filteredAndSortedProducts.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 p-12 rounded-lg shadow-md text-center transition-colors duration-300">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
+          <div className="bg-white dark:bg-gray-800 p-8 md:p-12 rounded-lg shadow-md text-center transition-colors duration-300">
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-900 dark:text-white mb-4">
               {products.length === 0 ? 'No hay productos disponibles' : 'No se encontraron productos'}
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm md:text-base">
               {products.length === 0 
                 ? 'Los productos aparecerán aquí una vez que el administrador los agregue.'
                 : 'Intenta ajustar los filtros de búsqueda para encontrar lo que buscas.'
@@ -277,8 +346,10 @@ const ProductCatalog = () => {
                 onClick={() => {
                   setSearchTerm('');
                   setSelectedCategory('all');
+                  setSelectedTipo('all');
+                  setShowOfertas(false);
                 }}
-                className="bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700"
+                className="bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700 transition-colors"
               >
                 Limpiar filtros
               </button>
@@ -287,8 +358,8 @@ const ProductCatalog = () => {
         ) : (
           <div className={
             viewMode === 'grid' 
-              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
-              : 'space-y-6'
+              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6'
+              : 'space-y-4 md:space-y-6'
           }>
             {filteredAndSortedProducts.map((product) => (
               <ProductCard 

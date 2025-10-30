@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Star, TrendingUp, Sparkles, Percent, Recycle } from 'lucide-react';
+import { ShoppingBag, Star, TrendingUp, Sparkles, Percent, Recycle, Menu, X } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import { useState, useEffect } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
@@ -22,6 +22,7 @@ const TikTokIcon = ({ size = 20 }) => (
 const Home = () => {
   const { getCartItemsCount } = useCart();
   const totalItems = getCartItemsCount();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const [productCounts, setProductCounts] = useState({
     nuevos: 0,
@@ -64,12 +65,13 @@ const Home = () => {
       <nav className="bg-white dark:bg-gray-800 shadow-md transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
+            {/* Logo */}
+            <div className="flex items-center flex-shrink-0">
               <Link to="/" className="flex items-center space-x-2">
                 <img 
                   src="/images/logos/zapastroso-logo.png" 
                   alt="Zapastroso Logo" 
-                  className="h-12 w-auto rounded-lg shadow-sm"
+                  className="h-10 sm:h-12 w-auto rounded-lg shadow-sm"
                   onError={(e) => {
                     // Fallback si no existe el logo
                     e.target.style.display = 'none';
@@ -77,56 +79,143 @@ const Home = () => {
                   }}
                 />
                 <div className="hidden items-center space-x-2" style={{display: 'none'}}>
-                  <span className="text-3xl">👟</span>
-                  <span className="text-2xl font-bold bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">
+                  <span className="text-2xl sm:text-3xl">👟</span>
+                  <span className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">
                     Zapastroso
                   </span>
                 </div>
               </Link>
             </div>
             
-            {/* Redes Sociales y Tema - Centro */}
-            <div className="flex items-center space-x-4">
-              <a 
-                href="https://www.instagram.com/zapastrozosdm?igsh=OGE1d2ZidW1zMm9q" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-gray-600 hover:text-pink-600 dark:text-gray-300 dark:hover:text-pink-400 transition-colors duration-300 p-3 rounded-full hover:bg-pink-50 dark:hover:bg-pink-900/20 shadow-sm hover:shadow-md"
-                title="Síguenos en Instagram"
-              >
-                <InstagramIcon size={28} />
-              </a>
-              <a 
-                href="https://www.tiktok.com/@zapastrozos?_t=ZN-90zDfdt6bl0&_r=1" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white transition-colors duration-300 p-3 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm hover:shadow-md"
-                title="Síguenos en TikTok"
-              >
-                <TikTokIcon size={28} />
-              </a>
-              <ThemeToggle size={24} />
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center space-x-6">
+              {/* Redes Sociales */}
+              <div className="flex items-center space-x-2">
+                <a 
+                  href="https://www.instagram.com/zapastrozosdm?igsh=OGE1d2ZidW1zMm9q" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-gray-600 hover:text-pink-600 dark:text-gray-300 dark:hover:text-pink-400 transition-colors duration-300 p-2 rounded-full hover:bg-pink-50 dark:hover:bg-pink-900/20"
+                  title="Síguenos en Instagram"
+                >
+                  <InstagramIcon size={24} />
+                </a>
+                <a 
+                  href="https://www.tiktok.com/@zapastrozos?_t=ZN-90zDfdt6bl0&_r=1" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white transition-colors duration-300 p-2 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700"
+                  title="Síguenos en TikTok"
+                >
+                  <TikTokIcon size={24} />
+                </a>
+                <ThemeToggle size={20} />
+              </div>
+              
+              {/* Navigation Links */}
+              <div className="flex items-center space-x-6">
+                <Link to="/catalogo" className="text-gray-700 hover:text-cyan-600 dark:text-gray-300 dark:hover:text-cyan-400 transition duration-300 font-medium">
+                  Catálogo
+                </Link>
+                <Link to="/firebase-test" className="text-gray-700 hover:text-cyan-600 dark:text-gray-300 dark:hover:text-cyan-400 transition duration-300 font-medium">
+                  🔧 Setup
+                </Link>
+                <Link to="/carrito" className="text-gray-700 hover:text-cyan-600 dark:text-gray-300 dark:hover:text-cyan-400 transition duration-300 relative">
+                  <ShoppingBag size={24} />
+                  {totalItems > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                      {totalItems > 9 ? '9+' : totalItems}
+                    </span>
+                  )}
+                </Link>
+                <Link to="/login" className="bg-gradient-to-r from-cyan-500 to-teal-600 text-white px-4 py-2 rounded-md hover:from-cyan-600 hover:to-teal-700 transition duration-300 font-semibold shadow-md whitespace-nowrap">
+                  Admin
+                </Link>
+              </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <Link to="/catalogo" className="text-gray-700 hover:text-cyan-600 dark:text-gray-300 dark:hover:text-cyan-400 transition duration-300">
-                Catálogo
-              </Link>
-              <Link to="/firebase-test" className="text-gray-700 hover:text-cyan-600 dark:text-gray-300 dark:hover:text-cyan-400 transition duration-300">
-                🔧 Setup
-              </Link>
-              <Link to="/carrito" className="text-gray-700 hover:text-cyan-600 dark:text-gray-300 dark:hover:text-cyan-400 transition duration-300 relative">
+
+            {/* Mobile Menu Button */}
+            <div className="lg:hidden flex items-center space-x-2">
+              {/* Cart Icon for Mobile */}
+              <Link to="/carrito" className="text-gray-700 hover:text-cyan-600 dark:text-gray-300 dark:hover:text-cyan-400 transition duration-300 relative p-2">
                 <ShoppingBag size={24} />
                 {totalItems > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
                     {totalItems > 9 ? '9+' : totalItems}
                   </span>
                 )}
               </Link>
-              <Link to="/login" className="bg-gradient-to-r from-cyan-500 to-teal-600 text-white px-4 py-2 rounded-md hover:from-cyan-600 hover:to-teal-700 transition duration-300 font-semibold shadow-md">
-                Admin
-              </Link>
+              
+              {/* Hamburger Menu */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="text-gray-700 dark:text-gray-300 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors duration-300 p-2"
+                aria-label="Abrir menú"
+              >
+                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
             </div>
           </div>
+
+          {/* Mobile Navigation Menu */}
+          {mobileMenuOpen && (
+            <div className="lg:hidden border-t border-gray-200 dark:border-gray-700">
+              <div className="px-2 pt-2 pb-3 space-y-1">
+                {/* Social Links */}
+                <div className="flex items-center justify-center space-x-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                  <a 
+                    href="https://www.instagram.com/zapastrozosdm?igsh=OGE1d2ZidW1zMm9q" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-gray-600 hover:text-pink-600 dark:text-gray-300 dark:hover:text-pink-400 transition-colors duration-300 p-3 rounded-full hover:bg-pink-50 dark:hover:bg-pink-900/20"
+                    title="Síguenos en Instagram"
+                  >
+                    <InstagramIcon size={28} />
+                  </a>
+                  <a 
+                    href="https://www.tiktok.com/@zapastrozos?_t=ZN-90zDfdt6bl0&_r=1" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white transition-colors duration-300 p-3 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700"
+                    title="Síguenos en TikTok"
+                  >
+                    <TikTokIcon size={28} />
+                  </a>
+                  <ThemeToggle size={24} />
+                </div>
+
+                {/* Navigation Links */}
+                <Link 
+                  to="/catalogo" 
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-cyan-600 dark:text-gray-300 dark:hover:text-cyan-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors duration-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  📚 Catálogo
+                </Link>
+                <Link 
+                  to="/firebase-test" 
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-cyan-600 dark:text-gray-300 dark:hover:text-cyan-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors duration-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  🔧 Setup
+                </Link>
+                <Link 
+                  to="/carrito" 
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-cyan-600 dark:text-gray-300 dark:hover:text-cyan-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors duration-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  🛒 Carrito {totalItems > 0 && `(${totalItems})`}
+                </Link>
+                <Link 
+                  to="/login" 
+                  className="block mx-3 my-2 px-4 py-3 text-center bg-gradient-to-r from-cyan-500 to-teal-600 text-white rounded-md hover:from-cyan-600 hover:to-teal-700 transition duration-300 font-semibold shadow-md"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  👤 Admin
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
