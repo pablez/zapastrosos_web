@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { 
   ShoppingBag, 
   Plus, 
@@ -13,6 +14,7 @@ import {
   Shield,
   Truck
 } from 'lucide-react';
+import ThemeToggle from '../ui/ThemeToggle';
 
 const Cart = () => {
   const { 
@@ -51,27 +53,30 @@ const Cart = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <ShoppingBag className="w-8 h-8 text-cyan-600" />
+              <ShoppingBag className="w-8 h-8 text-cyan-600 dark:text-cyan-400" />
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Carrito de Compras</h1>
-                <p className="text-gray-600">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Carrito de Compras</h1>
+                <p className="text-gray-600 dark:text-gray-300">
                   {getCartItemsCount()} artículo{getCartItemsCount() !== 1 ? 's' : ''} en tu carrito
                 </p>
               </div>
             </div>
-            <Link 
-              to="/catalogo"
-              className="text-cyan-600 hover:text-cyan-800 font-medium inline-flex items-center"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Seguir comprando
-            </Link>
+            <div className="flex items-center space-x-4">
+              <ThemeToggle size={20} />
+              <Link 
+                to="/catalogo"
+                className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-800 dark:hover:text-cyan-300 font-medium inline-flex items-center"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Seguir comprando
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -79,10 +84,10 @@ const Cart = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {items.length === 0 ? (
           // Carrito vacío
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <ShoppingBag className="w-24 h-24 text-gray-300 mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Tu carrito está vacío</h2>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center transition-colors duration-300">
+            <ShoppingBag className="w-24 h-24 text-gray-300 dark:text-gray-600 mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Tu carrito está vacío</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-8 max-w-md mx-auto">
               Parece que no has agregado ningún producto a tu carrito. 
               ¡Explora nuestro catálogo y encuentra tus zapatos favoritos!
             </p>
@@ -109,11 +114,11 @@ const Cart = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Lista de productos */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-md">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md transition-colors duration-300">
                 {/* Header de la tabla */}
-                <div className="border-b border-gray-200 px-6 py-4">
+                <div className="border-b border-gray-200 dark:border-gray-600 px-6 py-4">
                   <div className="flex justify-between items-center">
-                    <h2 className="text-lg font-semibold text-gray-900">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                       Productos ({getCartItemsCount()})
                     </h2>
                     <button
@@ -145,21 +150,21 @@ const Cart = () => {
 
             {/* Resumen del pedido */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-md p-6 sticky top-8">
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Resumen del pedido</h2>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 sticky top-8 transition-colors duration-300">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Resumen del pedido</h2>
                 
                 {/* Desglose de precios */}
                 <div className="space-y-4 mb-6">
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-gray-600 dark:text-gray-300">
                     <span>Subtotal</span>
                     <span>Bs. {subtotal.toFixed(2)}</span>
                   </div>
                   
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-gray-600 dark:text-gray-300">
                     <span>Envío</span>
                     <span>
                       {shipping === 0 ? (
-                        <span className="text-green-600 font-medium">¡Gratis!</span>
+                        <span className="text-green-600 dark:text-green-400 font-medium">¡Gratis!</span>
                       ) : (
                         `Bs. ${shipping.toFixed(2)}`
                       )}
@@ -167,14 +172,14 @@ const Cart = () => {
                   </div>
 
                   {promoApplied && (
-                    <div className="flex justify-between text-green-600">
+                    <div className="flex justify-between text-green-600 dark:text-green-400">
                       <span>Descuento (ZAPASTROSO10)</span>
                       <span>-Bs. {promoDiscount.toFixed(2)}</span>
                     </div>
                   )}
 
-                  <div className="border-t pt-4">
-                    <div className="flex justify-between text-lg font-bold text-gray-900">
+                  <div className="border-t dark:border-gray-600 pt-4">
+                    <div className="flex justify-between text-lg font-bold text-gray-900 dark:text-white">
                       <span>Total</span>
                       <span>Bs. {total.toFixed(2)}</span>
                     </div>
@@ -187,7 +192,7 @@ const Cart = () => {
                     <div>
                       <button
                         onClick={() => setShowPromoForm(!showPromoForm)}
-                        className="w-full text-left text-cyan-600 hover:text-cyan-800 font-medium mb-3 inline-flex items-center"
+                        className="w-full text-left text-cyan-600 dark:text-cyan-400 hover:text-cyan-800 dark:hover:text-cyan-300 font-medium mb-3 inline-flex items-center"
                       >
                         <Percent className="w-4 h-4 mr-2" />
                         ¿Tienes un cupón de descuento?
@@ -200,15 +205,15 @@ const Cart = () => {
                             placeholder="Código de cupón"
                             value={promoCode}
                             onChange={(e) => setPromoCode(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                           />
                           <button
                             onClick={handleApplyPromo}
-                            className="w-full bg-gray-600 text-white py-2 rounded-lg hover:bg-gray-700 font-medium"
+                            className="w-full bg-gray-600 dark:bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 font-medium"
                           >
                             Aplicar cupón
                           </button>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                             💡 Tip: Prueba con "ZAPASTROSO10"
                           </p>
                         </div>
@@ -218,19 +223,19 @@ const Cart = () => {
                 </div>
 
                 {/* Beneficios */}
-                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                  <h3 className="font-medium text-gray-900 mb-3">Beneficios incluidos:</h3>
-                  <div className="space-y-2 text-sm text-gray-600">
+                <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg transition-colors duration-300">
+                  <h3 className="font-medium text-gray-900 dark:text-white mb-3">Beneficios incluidos:</h3>
+                  <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                     <div className="flex items-center">
-                      <Truck className="w-4 h-4 text-green-600 mr-2" />
+                      <Truck className="w-4 h-4 text-green-600 dark:text-green-400 mr-2" />
                       <span>Envío gratis en pedidos +Bs. 200</span>
                     </div>
                     <div className="flex items-center">
-                      <Shield className="w-4 h-4 text-blue-600 mr-2" />
+                      <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400 mr-2" />
                       <span>Garantía de autenticidad</span>
                     </div>
                     <div className="flex items-center">
-                      <Gift className="w-4 h-4 text-purple-600 mr-2" />
+                      <Gift className="w-4 h-4 text-purple-600 dark:text-purple-400 mr-2" />
                       <span>Devoluciones gratuitas 30 días</span>
                     </div>
                   </div>
@@ -256,14 +261,14 @@ const Cart = () => {
                 </Link>
 
                 {hasStockIssues && (
-                  <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-yellow-800 text-sm">
+                  <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <p className="text-yellow-800 dark:text-yellow-300 text-sm">
                       ⚠️ Algunos productos tienen problemas de stock. Ajusta las cantidades antes de continuar.
                     </p>
                   </div>
                 )}
 
-                <p className="text-xs text-gray-500 mt-4 text-center">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center">
                   Pago 100% seguro y protegido
                 </p>
               </div>

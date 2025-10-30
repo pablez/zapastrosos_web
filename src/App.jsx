@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import './App.css';
 
 // Componentes de páginas (los crearemos después)
@@ -17,11 +18,12 @@ import FirebaseTest from './components/admin/FirebaseTest';
 
 function App() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <Router>
-          <div className="App">
-            <Routes>
+    <ThemeProvider>
+      <AuthProvider>
+        <CartProvider>
+          <Router>
+            <div className="App">
+              <Routes>
               {/* Rutas públicas de la tienda */}
               <Route path="/" element={<Home />} />
               <Route path="/catalogo" element={<ProductCatalog />} />
@@ -52,6 +54,7 @@ function App() {
         </Router>
       </CartProvider>
     </AuthProvider>
+    </ThemeProvider>
   );
 }
 

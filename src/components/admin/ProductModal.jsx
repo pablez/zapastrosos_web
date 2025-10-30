@@ -9,7 +9,9 @@ const ProductModal = ({ isOpen, onClose, product = null, onSave }) => {
     brand: '',
     category: '',
     basePrice: '',
+    descuento: 0, // Nuevo campo para descuentos
     stock: '',
+    tipo: 'nuevo', // Nuevo campo para tipo de producto
     description: '',
     mainImageUrl: '',
     images: [''],
@@ -50,7 +52,9 @@ const ProductModal = ({ isOpen, onClose, product = null, onSave }) => {
         brand: product.brand || '',
         category: product.category || '',
         basePrice: product.basePrice?.toString() || '',
+        descuento: product.descuento || 0,
         stock: product.stock?.toString() || '',
+        tipo: product.tipo || 'nuevo',
         description: product.description || '',
         mainImageUrl: product.mainImageUrl || '',
         images: product.images?.length ? product.images : [''],
@@ -66,7 +70,9 @@ const ProductModal = ({ isOpen, onClose, product = null, onSave }) => {
         brand: '',
         category: '',
         basePrice: '',
+        descuento: 0,
         stock: '',
+        tipo: 'nuevo',
         description: '',
         mainImageUrl: '',
         images: [''],
@@ -111,7 +117,9 @@ const ProductModal = ({ isOpen, onClose, product = null, onSave }) => {
         brand: formData.brand.trim(),
         category: formData.category,
         basePrice: parseFloat(formData.basePrice),
+        descuento: parseInt(formData.descuento) || 0,
         stock: parseInt(formData.stock),
+        tipo: formData.tipo,
         description: formData.description.trim(),
         mainImageUrl: formData.mainImageUrl.trim(),
         images: formData.images.filter(img => img.trim() !== ''),
@@ -258,6 +266,29 @@ const ProductModal = ({ isOpen, onClose, product = null, onSave }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Descuento (%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={formData.descuento}
+                  onChange={(e) => setFormData({ ...formData, descuento: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  placeholder="0"
+                />
+                <p className="text-gray-500 text-xs mt-1">
+                  Descuento en porcentaje (0-100). 
+                  {formData.descuento > 0 && formData.basePrice && (
+                    <span className="text-green-600 font-medium">
+                      {' '}Precio con descuento: Bs. {(parseFloat(formData.basePrice) * (1 - parseFloat(formData.descuento) / 100)).toFixed(2)}
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Stock Disponible *
                 </label>
                 <input
@@ -272,6 +303,21 @@ const ProductModal = ({ isOpen, onClose, product = null, onSave }) => {
                 />
                 {errors.stock && <p className="text-red-500 text-sm mt-1">{errors.stock}</p>}
                 <p className="text-gray-500 text-xs mt-1">Cantidad de unidades disponibles para venta</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tipo de Producto *
+                </label>
+                <select
+                  value={formData.tipo}
+                  onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                >
+                  <option value="nuevo">Nuevo</option>
+                  <option value="medio uso">Medio Uso</option>
+                </select>
+                <p className="text-gray-500 text-xs mt-1">Selecciona si el producto es nuevo o de medio uso</p>
               </div>
 
               <div>

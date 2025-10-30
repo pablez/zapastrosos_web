@@ -51,16 +51,69 @@ const OrderManagement = () => {
     loadOrders();
   }, []);
 
+  // Función para reducir el stock de los productos
+  const reduceProductStock = async (orderItems) => {
+    try {
+      const { doc, updateDoc, getDoc, increment } = await import('firebase/firestore');
+      
+      // Procesar cada item del pedido
+      for (const item of orderItems) {
+        const productRef = doc(db, 'products', item.productId);
+        
+        // Obtener el producto actual para verificar stock
+        const productSnap = await getDoc(productRef);
+        
+        if (productSnap.exists()) {
+          const currentProduct = productSnap.data();
+          const currentStock = currentProduct.stock || 0;
+          
+          // Verificar que hay suficiente stock
+          if (currentStock >= item.quantity) {
+            // Reducir el stock usando increment con valor negativo
+            await updateDoc(productRef, {
+              stock: increment(-item.quantity),
+              updatedAt: new Date()
+            });
+            
+            console.log(`Stock reducido para ${item.name}: ${item.quantity} unidades`);
+          } else {
+            console.warn(`Stock insuficiente para ${item.name}. Stock actual: ${currentStock}, solicitado: ${item.quantity}`);
+          }
+        } else {
+          console.warn(`Producto no encontrado: ${item.productId}`);
+        }
+      }
+      
+      console.log('Reducción de stock completada para todos los productos');
+      
+    } catch (error) {
+      console.error('Error reduciendo stock:', error);
+      throw error;
+    }
+  };
+
   // Actualizar estado del pedido
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
+      const currentOrder = orders.find(order => order.id === orderId);
+      const previousStatus = currentOrder?.status;
+      
+      // Si se está cambiando a 'completed' y no estaba completado antes, reducir stock
+      if (newStatus === 'completed' && previousStatus !== 'completed') {
+        if (currentOrder?.items) {
+          await reduceProductStock(currentOrder.items);
+        }
+      }
+      
       await updateDoc(doc(db, 'orders', orderId), {
         status: newStatus,
         updatedAt: new Date()
       });
+      
       setOrders(orders.map(order => 
         order.id === orderId ? { ...order, status: newStatus } : order
       ));
+      
       alert('Estado del pedido actualizado exitosamente');
     } catch (error) {
       console.error('Error actualizando estado:', error);

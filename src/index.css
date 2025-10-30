@@ -6,6 +6,20 @@
   font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Estilos base para modo oscuro */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #111827;
+  color: #f9fafb;
+}
+
 /* Animaciones personalizadas */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(20px); }

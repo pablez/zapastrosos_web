@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useCart } from '../../contexts/CartContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { 
   ArrowLeft, 
   ShoppingCart, 
@@ -16,6 +17,7 @@ import {
   Minus,
   Plus
 } from 'lucide-react';
+import ThemeToggle from '../ui/ThemeToggle';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -98,9 +100,11 @@ const ProductDetail = () => {
       id: `${selectedSize || 'default'}-${selectedColor || 'default'}`,
       talla: selectedSize || 'Talla única',
       color: selectedColor || 'Color único',
-      precio: product.basePrice || 0,
+      precio: product.descuento > 0 
+        ? product.basePrice * (1 - product.descuento / 100)
+        : product.basePrice || 0,
       precioOriginal: product.basePrice || 0,
-      descuento: 0,
+      descuento: product.descuento || 0,
       stock: stockDisponible
     };    // Agregar múltiples cantidades si es necesario
     for (let i = 0; i < quantity; i++) {
@@ -114,10 +118,10 @@ const ProductDetail = () => {
   // Estados de carga y error
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors duration-300">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando producto...</p>
+          <p className="text-gray-600 dark:text-gray-300">Cargando producto...</p>
         </div>
       </div>
     );
@@ -125,12 +129,12 @@ const ProductDetail = () => {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors duration-300">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
             {error || 'Producto no encontrado'}
           </h1>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
             El producto que buscas no está disponible en este momento.
           </p>
           <Link 
@@ -148,22 +152,23 @@ const ProductDetail = () => {
   const allImages = [product.mainImageUrl, ...(product.images || [])].filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       {/* Navegación */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <nav className="flex items-center space-x-2 text-sm">
-              <Link to="/" className="text-gray-500 hover:text-gray-700">Inicio</Link>
-              <span className="text-gray-400">/</span>
-              <Link to="/catalogo" className="text-gray-500 hover:text-gray-700">Catálogo</Link>
-              <span className="text-gray-400">/</span>
-              <span className="text-gray-900 font-medium">{product.name}</span>
+              <Link to="/" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">Inicio</Link>
+              <span className="text-gray-400 dark:text-gray-500">/</span>
+              <Link to="/catalogo" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">Catálogo</Link>
+              <span className="text-gray-400 dark:text-gray-500">/</span>
+              <span className="text-gray-900 dark:text-white font-medium">{product.name}</span>
             </nav>
             <div className="flex items-center space-x-4">
+              <ThemeToggle size={20} />
               <Link 
                 to="/carrito"
-                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 inline-flex items-center relative"
+                className="bg-gray-600 dark:bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 inline-flex items-center relative transition-colors duration-300"
               >
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 Carrito
@@ -229,6 +234,22 @@ const ProductDetail = () => {
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                   {product.category}
                 </span>
+                <div className="flex items-center space-x-2">
+                  {/* Badge de tipo de producto */}
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    product.tipo === 'nuevo' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {product.tipo === 'nuevo' ? '✨ Nuevo' : '♻️ Medio Uso'}
+                  </span>
+                  {/* Badge de descuento */}
+                  {product.descuento > 0 && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      -{product.descuento}% OFF
+                    </span>
+                  )}
+                </div>
                 <div className="flex space-x-2">
                   <button className="p-2 text-gray-400 hover:text-red-500 transition-colors">
                     <Heart className="w-5 h-5" />
@@ -254,9 +275,29 @@ const ProductDetail = () => {
 
             {/* Precio */}
             <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-3xl font-bold text-cyan-600">
-                Bs. {product.basePrice?.toFixed(2)}
-              </div>
+              {product.descuento > 0 ? (
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="text-3xl font-bold text-red-600">
+                    Bs. {(product.basePrice * (1 - product.descuento / 100)).toFixed(2)}
+                  </div>
+                  <div className="text-lg text-gray-500 line-through">
+                    Bs. {product.basePrice?.toFixed(2)}
+                  </div>
+                  <div className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm font-bold">
+                    -{product.descuento}%
+                  </div>
+                </div>
+              ) : (
+                <div className="text-3xl font-bold text-cyan-600 mb-2">
+                  Bs. {product.basePrice?.toFixed(2)}
+                </div>
+              )}
+              
+              {product.descuento > 0 && (
+                <p className="text-green-600 text-sm font-medium mb-1">
+                  ¡Ahorras Bs. {(product.basePrice * product.descuento / 100).toFixed(2)}!
+                </p>
+              )}
               <p className="text-gray-600 text-sm mt-1">Precio incluye envío gratis</p>
               
               {/* Información de stock */}
@@ -283,6 +324,25 @@ const ProductDetail = () => {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Descripción</h3>
               <p className="text-gray-700 leading-relaxed">{product.description}</p>
+            </div>
+
+            {/* Información del tipo de producto */}
+            <div className={`p-4 rounded-lg border-l-4 ${
+              product.tipo === 'nuevo' 
+                ? 'bg-green-50 border-green-500' 
+                : 'bg-yellow-50 border-yellow-500'
+            }`}>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {product.tipo === 'nuevo' ? '✨ Producto Nuevo' : '♻️ Producto de Medio Uso'}
+              </h3>
+              <p className={`text-sm ${
+                product.tipo === 'nuevo' ? 'text-green-700' : 'text-yellow-700'
+              }`}>
+                {product.tipo === 'nuevo' 
+                  ? 'Este producto es completamente nuevo, sin uso previo. Incluye garantía completa del fabricante y embalaje original.'
+                  : 'Este producto ha sido cuidadosamente inspeccionado y está en excelente estado. Ofrece una gran relación calidad-precio con garantía de satisfacción.'
+                }
+              </p>
             </div>
 
             {/* Tallas */}

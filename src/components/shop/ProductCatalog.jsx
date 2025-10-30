@@ -1,22 +1,40 @@
 import { useState, useEffect } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { db } from '../../services/firebase';
 import { useCart } from '../../contexts/CartContext';
-import { Search, Filter, Grid, List, Star, ShoppingCart, Check } from 'lucide-react';
+import { useTheme } from '../../contexts/ThemeContext';
+import { Search, Filter, Grid, List, Star, ShoppingCart, Check, Percent, Sparkles, Recycle } from 'lucide-react';
+import ThemeToggle from '../ui/ThemeToggle';
 
 const ProductCatalog = () => {
   const { getCartItemsCount } = useCart();
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedTipo, setSelectedTipo] = useState('all');
+  const [showOfertas, setShowOfertas] = useState(false);
   const [sortBy, setSortBy] = useState('name');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' o 'list'
 
   const totalItems = getCartItemsCount();
+
+  // Leer parámetros de URL al cargar
+  useEffect(() => {
+    const tipo = searchParams.get('tipo');
+    const ofertas = searchParams.get('ofertas');
+    
+    if (tipo) {
+      setSelectedTipo(tipo);
+    }
+    if (ofertas === 'true') {
+      setShowOfertas(true);
+    }
+  }, [searchParams]);
 
   // Cargar productos y categorías
   useEffect(() => {
@@ -59,7 +77,10 @@ const ProductCatalog = () => {
                            product.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            product.description?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
-      return matchesSearch && matchesCategory;
+      const matchesTipo = selectedTipo === 'all' || product.tipo === selectedTipo;
+      const matchesOfertas = !showOfertas || (product.descuento && product.descuento > 0);
+      
+      return matchesSearch && matchesCategory && matchesTipo && matchesOfertas;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -78,12 +99,12 @@ const ProductCatalog = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Cargando catálogo...</p>
+              <p className="text-gray-600 dark:text-gray-300">Cargando catálogo...</p>
             </div>
           </div>
         </div>
@@ -93,9 +114,9 @@ const ProductCatalog = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-lg">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 p-6 rounded-lg">
             <h2 className="text-xl font-semibold mb-2">Error</h2>
             <p>{error}</p>
           </div>
@@ -105,21 +126,22 @@ const ProductCatalog = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Catálogo de Productos</h1>
-              <p className="text-gray-600 mt-1">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Catálogo de Productos</h1>
+              <p className="text-gray-600 dark:text-gray-300 mt-1">
                 {filteredAndSortedProducts.length} producto{filteredAndSortedProducts.length !== 1 ? 's' : ''} disponible{filteredAndSortedProducts.length !== 1 ? 's' : ''}
               </p>
             </div>
           <div className="flex items-center space-x-4">
+            <ThemeToggle size={20} />
             <Link 
               to="/carrito"
-              className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 inline-flex items-center relative"
+              className="bg-gray-600 dark:bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 inline-flex items-center relative transition-colors duration-300"
             >
               <ShoppingCart className="w-4 h-4 mr-2" />
               Carrito
@@ -142,10 +164,10 @@ const ProductCatalog = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Filtros y búsqueda */}
-        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-8 transition-colors duration-300">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
             {/* Búsqueda */}
-            <div className="relative">
+            <div className="relative md:col-span-2">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
@@ -171,6 +193,33 @@ const ProductCatalog = () => {
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Filtro por tipo */}
+            <div className="relative">
+              <select
+                value={selectedTipo}
+                onChange={(e) => setSelectedTipo(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              >
+                <option value="all">Todos los tipos</option>
+                <option value="nuevo">Zapatos Nuevos</option>
+                <option value="medio uso">Medio Uso</option>
+              </select>
+            </div>
+
+            {/* Filtro de ofertas */}
+            <div className="relative">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showOfertas}
+                  onChange={(e) => setShowOfertas(e.target.checked)}
+                  className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                />
+                <span className="text-sm font-medium text-gray-700">Solo ofertas</span>
+                <Percent className="w-4 h-4 text-red-500" />
+              </label>
             </div>
 
             {/* Ordenar por */}
@@ -213,8 +262,8 @@ const ProductCatalog = () => {
 
         {/* Lista/Grid de productos */}
         {filteredAndSortedProducts.length === 0 ? (
-          <div className="bg-white p-12 rounded-lg shadow-md text-center">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+          <div className="bg-white dark:bg-gray-800 p-12 rounded-lg shadow-md text-center transition-colors duration-300">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
               {products.length === 0 ? 'No hay productos disponibles' : 'No se encontraron productos'}
             </h2>
             <p className="text-gray-600 mb-6">
@@ -269,14 +318,18 @@ const ProductCard = ({ product, viewMode }) => {
       imagenPrincipalURL: product.mainImageUrl
     };
 
+    const finalPrice = product.descuento && product.descuento > 0 
+      ? product.basePrice * (1 - product.descuento / 100)
+      : product.basePrice;
+
     const cartVariant = {
       id: `${product.id}-default`,
       color: product.colors?.[0] || 'Color único',
       talla: product.sizes?.[0] || 'Talla única',
-      precio: product.basePrice || 0,
+      precio: finalPrice,
       precioOriginal: product.basePrice || 0,
-      descuento: 0,
-      stock: 10 // Valor por defecto
+      descuento: product.descuento || 0,
+      stock: product.stock || 0
     };
 
     addToCart(cartProduct, cartVariant);
@@ -286,7 +339,7 @@ const ProductCard = ({ product, viewMode }) => {
   };
   if (viewMode === 'list') {
     return (
-      <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
         <div className="p-6">
           <div className="flex gap-6">
             {/* Imagen */}
@@ -305,7 +358,7 @@ const ProductCard = ({ product, viewMode }) => {
             <div className="flex-1">
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 hover:text-cyan-600">
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400">
                     <Link to={`/producto/${product.id}`}>
                       {product.name}
                     </Link>
@@ -313,9 +366,25 @@ const ProductCard = ({ product, viewMode }) => {
                   <p className="text-gray-600">{product.brand}</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-cyan-600">
-                    ${product.basePrice?.toFixed(2) || 'N/A'}
-                  </div>
+                  {product.descuento && product.descuento > 0 ? (
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-2xl font-bold text-red-600">
+                          Bs. {(product.basePrice * (1 - product.descuento / 100)).toFixed(2)}
+                        </span>
+                        <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">
+                          -{product.descuento}%
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-500 line-through">
+                        Bs. {product.basePrice?.toFixed(2)}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-2xl font-bold text-cyan-600">
+                      Bs. {product.basePrice?.toFixed(2) || 'N/A'}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -372,7 +441,7 @@ const ProductCard = ({ product, viewMode }) => {
 
   // Vista en grid
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
       {/* Imagen */}
       <div className="aspect-square overflow-hidden">
         <img
@@ -388,7 +457,7 @@ const ProductCard = ({ product, viewMode }) => {
       {/* Información */}
       <div className="p-4">
         <div className="mb-2">
-          <h3 className="text-lg font-semibold text-gray-900 hover:text-cyan-600 line-clamp-1">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white hover:text-cyan-600 dark:hover:text-cyan-400 line-clamp-1">
             <Link to={`/producto/${product.id}`}>
               {product.name}
             </Link>
@@ -401,12 +470,43 @@ const ProductCard = ({ product, viewMode }) => {
         </p>
 
         <div className="flex items-center justify-between mb-3">
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            {product.category}
-          </span>
-          <div className="text-xl font-bold text-cyan-600">
-            ${product.basePrice?.toFixed(2) || 'N/A'}
+          <div className="flex flex-col space-y-1">
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              {product.category}
+            </span>
+            {product.tipo && (
+              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                product.tipo === 'nuevo' 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-yellow-100 text-yellow-800'
+              }`}>
+                {product.tipo === 'nuevo' ? 'Nuevo' : 'Medio Uso'}
+              </span>
+            )}
           </div>
+          {product.descuento && product.descuento > 0 && (
+            <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">
+              -{product.descuento}%
+            </span>
+          )}
+        </div>
+
+        {/* Precio */}
+        <div className="mb-3">
+          {product.descuento && product.descuento > 0 ? (
+            <div>
+              <div className="text-lg font-bold text-red-600">
+                Bs. {(product.basePrice * (1 - product.descuento / 100)).toFixed(2)}
+              </div>
+              <div className="text-sm text-gray-500 line-through">
+                Bs. {product.basePrice?.toFixed(2)}
+              </div>
+            </div>
+          ) : (
+            <div className="text-lg font-bold text-cyan-600">
+              Bs. {product.basePrice?.toFixed(2) || 'N/A'}
+            </div>
+          )}
         </div>
 
         {product.sizes && product.sizes.length > 0 && (
