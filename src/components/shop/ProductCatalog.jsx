@@ -4,12 +4,15 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { db } from '../../services/firebase';
 import { useCart } from '../../contexts/CartContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import useThemeListener from '../../hooks/useThemeListener';
 import { Search, Filter, Grid, List, Star, ShoppingCart, Check, Percent, Sparkles, Recycle, Menu, X, ArrowLeft } from 'lucide-react';
 import ThemeToggle from '../ui/ThemeToggle';
 
 const ProductCatalog = () => {
   const { getCartItemsCount } = useCart();
+  const { theme } = useTheme(); // Agregar tema para forzar re-render
   const [searchParams] = useSearchParams();
+  const themeUpdate = useThemeListener(); // Hook para forzar re-render en cambios de tema
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -127,7 +130,12 @@ const ProductCatalog = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div 
+      className="min-h-screen transition-colors duration-300"
+      style={{
+        backgroundColor: theme === 'dark' ? '#111827' : '#f9fafb'
+      }}
+    >
       {/* Header - Responsive Navigation */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -210,31 +218,52 @@ const ProductCatalog = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
         {/* Filtros y búsqueda - Desktop */}
-        <div className={`bg-white dark:bg-gray-800 p-4 md:p-6 rounded-lg shadow-md mb-6 md:mb-8 transition-colors duration-300 ${mobileMenuOpen ? 'block' : 'hidden md:block'}`}>
+        <div 
+          className={`p-4 md:p-6 rounded-lg shadow-md mb-6 md:mb-8 transition-colors duration-300 ${mobileMenuOpen ? 'block' : 'hidden md:block'}`}
+          style={{
+            backgroundColor: theme === 'dark' ? '#1f2937' : '#ffffff'
+          }}
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-4">
             {/* Búsqueda */}
             <div className="relative sm:col-span-2 lg:col-span-2">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Buscar productos..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors"
+                style={{
+                  backgroundColor: theme === 'dark' ? '#374151' : '#ffffff',
+                  borderColor: theme === 'dark' ? '#4b5563' : '#d1d5db',
+                  color: theme === 'dark' ? '#f9fafb' : '#111827'
+                }}
               />
             </div>
 
             {/* Filtro por categoría */}
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors appearance-none"
+                style={{
+                  backgroundColor: theme === 'dark' ? '#374151' : '#ffffff',
+                  borderColor: theme === 'dark' ? '#4b5563' : '#d1d5db',
+                  color: theme === 'dark' ? '#f9fafb' : '#111827'
+                }}
               >
-                <option value="all">Todas las categorías</option>
+                <option value="all" style={{ backgroundColor: theme === 'dark' ? '#374151' : '#ffffff', color: theme === 'dark' ? '#f9fafb' : '#111827' }}>
+                  Todas las categorías
+                </option>
                 {categories.map(category => (
-                  <option key={category.id} value={category.name}>
+                  <option 
+                    key={category.id} 
+                    value={category.name}
+                    style={{ backgroundColor: theme === 'dark' ? '#374151' : '#ffffff', color: theme === 'dark' ? '#f9fafb' : '#111827' }}
+                  >
                     {category.name}
                   </option>
                 ))}
@@ -246,11 +275,22 @@ const ProductCatalog = () => {
               <select
                 value={selectedTipo}
                 onChange={(e) => setSelectedTipo(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors appearance-none"
+                style={{
+                  backgroundColor: theme === 'dark' ? '#374151' : '#ffffff',
+                  borderColor: theme === 'dark' ? '#4b5563' : '#d1d5db',
+                  color: theme === 'dark' ? '#f9fafb' : '#111827'
+                }}
               >
-                <option value="all">Todos los tipos</option>
-                <option value="nuevo">Zapatos Nuevos</option>
-                <option value="medio uso">Medio Uso</option>
+                <option value="all" style={{ backgroundColor: theme === 'dark' ? '#374151' : '#ffffff', color: theme === 'dark' ? '#f9fafb' : '#111827' }}>
+                  Todos los tipos
+                </option>
+                <option value="nuevo" style={{ backgroundColor: theme === 'dark' ? '#374151' : '#ffffff', color: theme === 'dark' ? '#f9fafb' : '#111827' }}>
+                  Zapatos Nuevos
+                </option>
+                <option value="medio uso" style={{ backgroundColor: theme === 'dark' ? '#374151' : '#ffffff', color: theme === 'dark' ? '#f9fafb' : '#111827' }}>
+                  Medio Uso
+                </option>
               </select>
             </div>
 
@@ -262,8 +302,20 @@ const ProductCatalog = () => {
                   checked={showOfertas}
                   onChange={(e) => setShowOfertas(e.target.checked)}
                   className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                  style={{
+                    accentColor: '#dc2626',
+                    backgroundColor: theme === 'dark' ? '#374151' : '#ffffff',
+                    borderColor: theme === 'dark' ? '#6b7280' : '#d1d5db'
+                  }}
                 />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Solo ofertas</span>
+                <span 
+                  className="text-sm font-medium"
+                  style={{
+                    color: theme === 'dark' ? '#f9fafb' : '#111827'
+                  }}
+                >
+                  Solo ofertas
+                </span>
                 <Percent className="w-4 h-4 text-red-500" />
               </label>
             </div>
@@ -272,12 +324,25 @@ const ProductCatalog = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-colors appearance-none"
+              style={{
+                backgroundColor: theme === 'dark' ? '#374151' : '#ffffff',
+                borderColor: theme === 'dark' ? '#4b5563' : '#d1d5db',
+                color: theme === 'dark' ? '#f9fafb' : '#111827'
+              }}
             >
-              <option value="name">Ordenar por nombre</option>
-              <option value="brand">Ordenar por marca</option>
-              <option value="price-low">Precio: menor a mayor</option>
-              <option value="price-high">Precio: mayor a menor</option>
+              <option value="name" style={{ backgroundColor: theme === 'dark' ? '#374151' : '#ffffff', color: theme === 'dark' ? '#f9fafb' : '#111827' }}>
+                Ordenar por nombre
+              </option>
+              <option value="brand" style={{ backgroundColor: theme === 'dark' ? '#374151' : '#ffffff', color: theme === 'dark' ? '#f9fafb' : '#111827' }}>
+                Ordenar por marca
+              </option>
+              <option value="price-low" style={{ backgroundColor: theme === 'dark' ? '#374151' : '#ffffff', color: theme === 'dark' ? '#f9fafb' : '#111827' }}>
+                Precio: menor a mayor
+              </option>
+              <option value="price-high" style={{ backgroundColor: theme === 'dark' ? '#374151' : '#ffffff', color: theme === 'dark' ? '#f9fafb' : '#111827' }}>
+                Precio: mayor a menor
+              </option>
             </select>
 
             {/* Vista */}
@@ -331,11 +396,27 @@ const ProductCatalog = () => {
 
         {/* Lista/Grid de productos */}
         {filteredAndSortedProducts.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 p-8 md:p-12 rounded-lg shadow-md text-center transition-colors duration-300">
-            <h2 className="text-xl md:text-2xl font-semibold text-gray-900 dark:text-white mb-4">
+          <div 
+            className="p-8 md:p-12 rounded-lg shadow-md text-center transition-colors duration-300"
+            style={{
+              backgroundColor: theme === 'dark' ? '#1f2937' : '#ffffff',
+              borderColor: theme === 'dark' ? '#374151' : '#e5e7eb'
+            }}
+          >
+            <h2 
+              className="text-xl md:text-2xl font-semibold mb-4"
+              style={{
+                color: theme === 'dark' ? '#f9fafb' : '#111827'
+              }}
+            >
               {products.length === 0 ? 'No hay productos disponibles' : 'No se encontraron productos'}
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm md:text-base">
+            <p 
+              className="mb-6 text-sm md:text-base"
+              style={{
+                color: theme === 'dark' ? '#d1d5db' : '#6b7280'
+              }}
+            >
               {products.length === 0 
                 ? 'Los productos aparecerán aquí una vez que el administrador los agregue.'
                 : 'Intenta ajustar los filtros de búsqueda para encontrar lo que buscas.'
@@ -349,18 +430,34 @@ const ProductCatalog = () => {
                   setSelectedTipo('all');
                   setShowOfertas(false);
                 }}
-                className="bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700 transition-colors"
+                className="px-6 py-2 rounded-lg transition-colors duration-200 font-medium"
+                style={{
+                  backgroundColor: '#0891b2',
+                  color: '#ffffff',
+                  border: `1px solid #0891b2`
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#0e7490';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#0891b2';
+                }}
               >
                 Limpiar filtros
               </button>
             ) : null}
           </div>
         ) : (
-          <div className={
-            viewMode === 'grid' 
-              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6'
-              : 'space-y-4 md:space-y-6'
-          }>
+          <div 
+            className={
+              viewMode === 'grid' 
+                ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6'
+                : 'space-y-4 md:space-y-6'
+            }
+            style={{
+              color: theme === 'dark' ? '#f9fafb' : '#111827'
+            }}
+          >
             {filteredAndSortedProducts.map((product) => (
               <ProductCard 
                 key={product.id} 

@@ -25,25 +25,39 @@ const MoonIcon = ({ size = 20 }) => (
 const ThemeToggle = ({ size = 24, className = "" }) => {
   const { theme, toggleTheme } = useTheme();
 
-  const handleClick = () => {
-    console.log('ThemeToggle clicked. Current theme:', theme); // Debug
+  const handleClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🌓 ThemeToggle clicked. Cambiando de:', theme, 'a:', theme === 'light' ? 'dark' : 'light');
     toggleTheme();
   };
 
-  console.log('ThemeToggle rendered. Current theme:', theme); // Debug
-
   return (
     <button
+      type="button"
       onClick={handleClick}
-      className={`p-3 rounded-full transition-all duration-300 hover:shadow-md ${
+      className={`relative p-2 md:p-3 rounded-full transition-all duration-300 hover:shadow-lg transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 ${
         theme === 'light' 
-          ? 'text-yellow-600 hover:bg-yellow-50 bg-yellow-100' 
-          : 'text-blue-400 hover:bg-gray-700 bg-gray-800'
+          ? 'text-yellow-600 hover:bg-yellow-50 bg-yellow-100 focus:ring-offset-white' 
+          : 'text-blue-400 hover:bg-gray-700 bg-gray-800 focus:ring-offset-gray-900'
       } ${className}`}
       title={theme === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'}
       aria-label={theme === 'light' ? 'Activar modo oscuro' : 'Activar modo claro'}
     >
-      {theme === 'light' ? <MoonIcon size={size} /> : <SunIcon size={size} />}
+      <div className="flex items-center justify-center">
+        {theme === 'light' ? (
+          <MoonIcon size={size} />
+        ) : (
+          <SunIcon size={size} />
+        )}
+      </div>
+      
+      {/* Indicador visual del estado */}
+      <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full transition-all duration-300 ${
+        theme === 'light' 
+          ? 'bg-yellow-400 shadow-yellow-400/50' 
+          : 'bg-blue-400 shadow-blue-400/50'
+      } shadow-lg`} />
     </button>
   );
 };
