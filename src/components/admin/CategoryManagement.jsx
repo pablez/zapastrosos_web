@@ -122,7 +122,7 @@ const CategoryManagement = () => {
             <Tag className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500">
               {categories.length === 0 
-                ? 'No hay categorías cargadas. Ve a "Inicializar Datos" para cargar categorías de muestra.'
+                ? 'No hay categorías cargadas. Usa el botón "Nueva Categoría" para crear una.'
                 : 'No se encontraron categorías con el término de búsqueda.'
               }
             </p>

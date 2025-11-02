@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
+import React, { useState, useEffect, useRef } from 'react';
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, getDoc, increment } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { 
   Package, 
@@ -21,12 +21,18 @@ import {
 } from 'lucide-react';
 import OrderLocationMap from './OrderLocationMap';
 import PaymentProofViewer from './PaymentProofViewer';
+import ConfirmModal from './ConfirmModal';
 
 const OrderManagement = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const menuRefsRef = useRef({});
+  const [toasts, setToasts] = useState([]);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20; // items per page for 'load more'
   const [filter, setFilter] = useState('all'); // all, pending, pending_payment, completed, cancelled
 
   // Cargar pedidos desde Firestore
@@ -54,36 +60,74 @@ const OrderManagement = () => {
   // Función para reducir el stock de los productos
   const reduceProductStock = async (orderItems) => {
     try {
-      const { doc, updateDoc, getDoc, increment } = await import('firebase/firestore');
-      
       // Procesar cada item del pedido
-      for (const item of orderItems) {
+      for (const item of orderItems || []) {
+        if (!item || !item.productId) {
+          console.warn('Item inválido al reducir stock:', item);
+          continue;
+        }
+
         const productRef = doc(db, 'products', item.productId);
-        
+
         // Obtener el producto actual para verificar stock
         const productSnap = await getDoc(productRef);
-        
-        if (productSnap.exists()) {
-          const currentProduct = productSnap.data();
-          const currentStock = currentProduct.stock || 0;
-          
+
+        let resolvedProductRef = productRef;
+        let resolvedSnap = productSnap;
+
+        // If product doc not found by productId, try fallback keys
+        if (!(resolvedSnap && resolvedSnap.exists && resolvedSnap.exists())) {
+          // Try using item.id as product id
+          if (item.id) {
+            const altRef = doc(db, 'products', item.id);
+            const altSnap = await getDoc(altRef);
+            if (altSnap && altSnap.exists && altSnap.exists()) {
+              resolvedProductRef = altRef;
+              resolvedSnap = altSnap;
+            }
+          }
+        }
+
+        // If still not found, try to find product by name
+        if (!(resolvedSnap && resolvedSnap.exists && resolvedSnap.exists()) && item.name) {
+          try {
+            const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'));
+            const results = await getDocs(q);
+            const found = results.docs.find(d => {
+              const pdata = d.data();
+              return pdata && pdata.name && String(pdata.name).toLowerCase().includes(String(item.name).toLowerCase());
+            });
+            if (found) {
+              resolvedProductRef = doc(db, 'products', found.id);
+              resolvedSnap = await getDoc(resolvedProductRef);
+            }
+          } catch (e) {
+            // ignore query errors here
+          }
+        }
+
+        if (resolvedSnap && resolvedSnap.exists && resolvedSnap.exists()) {
+          const currentProduct = resolvedSnap.data();
+          const currentStock = Number(currentProduct?.stock || 0);
+          const qty = Number(item.quantity || 0);
+
           // Verificar que hay suficiente stock
-          if (currentStock >= item.quantity) {
+          if (currentStock >= qty && qty > 0) {
             // Reducir el stock usando increment con valor negativo
-            await updateDoc(productRef, {
-              stock: increment(-item.quantity),
+            await updateDoc(resolvedProductRef, {
+              stock: increment(-qty),
               updatedAt: new Date()
             });
-            
-            console.log(`Stock reducido para ${item.name}: ${item.quantity} unidades`);
+
+            console.log(`Stock reducido para ${item.name || item.productId}: ${qty} unidades`);
           } else {
-            console.warn(`Stock insuficiente para ${item.name}. Stock actual: ${currentStock}, solicitado: ${item.quantity}`);
+            console.warn(`Stock insuficiente para ${item.name || item.productId}. Stock actual: ${currentStock}, solicitado: ${qty}`);
           }
         } else {
-          console.warn(`Producto no encontrado: ${item.productId}`);
+          console.warn(`Producto no encontrado para item: ${JSON.stringify(item)}`);
         }
       }
-      
+
       console.log('Reducción de stock completada para todos los productos');
       
     } catch (error) {
@@ -113,33 +157,86 @@ const OrderManagement = () => {
       setOrders(orders.map(order => 
         order.id === orderId ? { ...order, status: newStatus } : order
       ));
-      
-      alert('Estado del pedido actualizado exitosamente');
+      addToast('Estado del pedido actualizado correctamente', 'success');
     } catch (error) {
       console.error('Error actualizando estado:', error);
-      alert('Error al actualizar el estado del pedido');
+      addToast('Error al actualizar estado: ' + (error.message || ''), 'error');
     }
   };
 
   // Eliminar pedido
-  const deleteOrder = async (orderId) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar este pedido? Esta acción no se puede deshacer.')) {
-      try {
-        await deleteDoc(doc(db, 'orders', orderId));
-        setOrders(orders.filter(order => order.id !== orderId));
-        alert('Pedido eliminado exitosamente');
-      } catch (error) {
-        console.error('Error eliminando pedido:', error);
-        alert('Error al eliminar el pedido');
-      }
+  // Confirm modal state for destructive actions
+  const [confirmState, setConfirmState] = useState({ open: false, title: '', message: '', onConfirm: null });
+
+  const performDeleteOrder = async (orderId) => {
+    try {
+      await deleteDoc(doc(db, 'orders', orderId));
+      setOrders(prev => prev.filter(order => order.id !== orderId));
+      addToast('Pedido eliminado', 'success');
+    } catch (error) {
+      console.error('Error eliminando pedido:', error);
+      addToast('Error al eliminar: ' + (error.message || ''), 'error');
     }
   };
+
+  const deleteOrder = (orderId) => {
+    setConfirmState({
+      open: true,
+      title: 'Eliminar pedido',
+      message: '¿Estás seguro de que quieres eliminar este pedido? Esta acción no se puede deshacer.',
+      onConfirm: async () => {
+        setConfirmState(s => ({ ...s, open: false }));
+        await performDeleteOrder(orderId);
+      }
+    });
+  };
+
+  // Toast helper
+  const addToast = (message, type = 'info') => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4500);
+  };
+
+  // Close menu on outside click or Escape
+  useEffect(() => {
+    const onDocClick = (e) => {
+      if (!openMenuId) return;
+      const menuEl = menuRefsRef.current[`menu-${openMenuId}`];
+      const btnEl = menuRefsRef.current[openMenuId];
+      if (menuEl && !menuEl.contains(e.target) && btnEl && !btnEl.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') setOpenMenuId(null);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [openMenuId]);
+
+  // Focus the first actionable item when a menu opens
+  useEffect(() => {
+    if (!openMenuId) return;
+    const menuEl = menuRefsRef.current[`menu-${openMenuId}`];
+    if (menuEl) {
+      const first = menuEl.querySelector('button, select, [tabindex]');
+      if (first && typeof first.focus === 'function') first.focus();
+    }
+  }, [openMenuId]);
 
   // Filtrar pedidos
   const filteredOrders = orders.filter(order => {
     if (filter === 'all') return true;
     return order.status === filter;
   });
+
+  // Pagination / load-more: show first (page * PAGE_SIZE) items
+  const displayedOrders = filteredOrders.slice(0, page * PAGE_SIZE);
 
   // Obtener color del estado
   const getStatusColor = (status) => {
@@ -190,6 +287,16 @@ const OrderManagement = () => {
 
   return (
     <div>
+      {/* Toast container */}
+      <div className="fixed bottom-4 right-4 z-60 flex flex-col items-end space-y-2">
+        {toasts.map(t => (
+          <div key={t.id} className={`max-w-sm w-full px-4 py-2 rounded-md shadow-md text-sm ${t.type === 'success' ? 'bg-green-50 text-green-800 border border-green-100' : t.type === 'error' ? 'bg-red-50 text-red-800 border border-red-100' : 'bg-gray-50 text-gray-800 border border-gray-100'}`}>
+            {t.message}
+          </div>
+        ))}
+      </div>
+
+      
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Gestión de Pedidos</h1>
         <button 
@@ -248,8 +355,89 @@ const OrderManagement = () => {
       </div>
 
       {/* Lista de pedidos */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        {filteredOrders.length === 0 ? (
+
+      {/* Mobile: tarjeta por pedido (mejorada para celular) */}
+      <div className="md:hidden space-y-3 mb-4">
+        {displayedOrders.length === 0 ? (
+          <div className="p-6 text-center bg-white rounded-lg shadow-sm">
+            <Package className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <h3 className="text-lg font-medium text-gray-900 mb-1">No hay pedidos</h3>
+            <p className="text-gray-500">{filter === 'all' ? 'No se han realizado pedidos aún.' : `No hay pedidos con estado "${getStatusText(filter)}".`}</p>
+          </div>
+        ) : (
+          displayedOrders.map(order => (
+            <article key={order.id} className="bg-white p-4 rounded-lg shadow-sm">
+              <header className="flex items-start justify-between">
+                <div className="flex-1 pr-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">{order.orderNumber || order.id.slice(0,8)}</div>
+                      <div className="text-xs text-gray-500">{order.items?.length || 0} productos • {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString() : new Date(order.createdAt).toLocaleDateString()}</div>
+                    </div>
+                    <div>
+                      <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(order.status)}`}>
+                        <span className="sr-only">Estado:</span>
+                        {getStatusIcon(order.status)}
+                        <span>{getStatusText(order.status)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Acciones comprimidas en un menú nativo sin JS adicional */}
+                <div className="shrink-0 ml-2 relative">
+                  <button
+                    aria-haspopup="true"
+                    aria-expanded={openMenuId === order.id}
+                    onClick={() => setOpenMenuId(openMenuId === order.id ? null : order.id)}
+                    ref={el => { menuRefsRef.current[order.id] = el; }}
+                    className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700"
+                    aria-label="Abrir acciones"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                  </button>
+
+                  {openMenuId === order.id && (
+                    <div
+                      role="menu"
+                      aria-label="Acciones del pedido"
+                      className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+                      ref={el => { if (el) { menuRefsRef.current[`menu-${order.id}`] = el; } }}
+                    >
+                      <div className="py-1">
+                        <button role="menuitem" onClick={() => { setOpenMenuId(null); viewOrderDetails(order); }} className="w-full text-left px-3 py-2 text-sm text-cyan-600 hover:bg-gray-50">Ver detalles</button>
+                        <div className="px-3 py-2">
+                          <label className="block text-xs text-gray-500 mb-1">Cambiar estado</label>
+                          <select role="menuitem" value={order.status} onChange={(e) => { updateOrderStatus(order.id, e.target.value); setOpenMenuId(null); }} className="w-full text-sm border rounded px-2 py-1">
+                            <option value="pending">Pendiente</option>
+                            <option value="pending_payment">Pago Pendiente</option>
+                            <option value="completed">Completado</option>
+                            <option value="cancelled">Cancelado</option>
+                          </select>
+                        </div>
+                        <div className="border-t mt-1" />
+                        <button role="menuitem" onClick={() => { setOpenMenuId(null); deleteOrder(order.id); }} className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-50">Eliminar</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                    
+              </header>
+
+              <div className="mt-3 text-sm text-gray-700">
+                <div className="font-medium truncate">{order.customerInfo?.fullName || `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim()}</div>
+                <div className="text-xs text-gray-500 flex items-center mt-1"><Phone className="w-3 h-3 mr-1" />{order.customerInfo?.phone || order.customer?.phone}</div>
+                <div className="text-sm font-semibold text-gray-900 mt-2">Bs. {order.payment?.total?.toFixed(2) || order.summary?.total?.toFixed(2) || '0.00'}</div>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+
+        {/* Desktop / tablet: tabla md+ */}
+    <div className="hidden md:block bg-white rounded-lg shadow-md overflow-hidden">
+        {displayedOrders.length === 0 ? (
           <div className="p-8 text-center">
             <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No hay pedidos</h3>
@@ -262,33 +450,19 @@ const OrderManagement = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Pedido
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Cliente
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fecha
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pedido</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredOrders.map((order) => (
+                {displayedOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {order.orderNumber || order.id.slice(0, 8)}
-                      </div>
+                      <div className="text-sm font-medium text-gray-900">{order.orderNumber || order.id.slice(0, 8)}</div>
                       <div className="text-sm text-gray-500 flex items-center space-x-2">
                         <span>{order.items?.length || 0} productos</span>
                         {order.paymentProofs && order.paymentProofs.length > 0 && (
@@ -300,12 +474,9 @@ const OrderManagement = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {order.customer?.firstName} {order.customer?.lastName}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {order.customer?.email}
-                      </div>
+                      <div className="text-sm font-medium text-gray-900">{order.customerInfo?.fullName || `${order.customer?.firstName || ''} ${order.customer?.lastName || ''}`.trim()}</div>
+                      <div className="text-sm text-gray-500">{order.customerInfo?.email || order.customer?.email}</div>
+                      <div className="text-sm text-gray-500 flex items-center"><Phone className="w-3 h-3 mr-1" />{order.customerInfo?.phone || order.customer?.phone}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
@@ -313,40 +484,17 @@ const OrderManagement = () => {
                         <span>{getStatusText(order.status)}</span>
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      Bs. {order.summary?.total?.toFixed(2) || '0.00'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {order.createdAt?.toDate ? 
-                        order.createdAt.toDate().toLocaleDateString() : 
-                        new Date(order.createdAt).toLocaleDateString()
-                      }
-                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Bs. {order.payment?.total?.toFixed(2) || order.summary?.total?.toFixed(2) || '0.00'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString() : new Date(order.createdAt).toLocaleDateString()}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => viewOrderDetails(order)}
-                        className="text-cyan-600 hover:text-cyan-900"
-                        title="Ver detalles"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <select
-                        value={order.status}
-                        onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                        className="text-xs border rounded px-1 py-1"
-                      >
+                      <button onClick={() => viewOrderDetails(order)} className="text-cyan-600 hover:text-cyan-900" title="Ver detalles"><Eye className="w-4 h-4" /></button>
+                      <select value={order.status} onChange={(e) => updateOrderStatus(order.id, e.target.value)} className="text-xs border rounded px-1 py-1">
                         <option value="pending">Pendiente</option>
                         <option value="pending_payment">Pago Pendiente</option>
                         <option value="completed">Completado</option>
                         <option value="cancelled">Cancelado</option>
                       </select>
-                      <button
-                        onClick={() => deleteOrder(order.id)}
-                        className="text-red-600 hover:text-red-900"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <button onClick={() => deleteOrder(order.id)} className="text-red-600 hover:text-red-900" title="Eliminar"><Trash2 className="w-4 h-4" /></button>
                     </td>
                   </tr>
                 ))}
@@ -356,11 +504,18 @@ const OrderManagement = () => {
         )}
       </div>
 
+          {/* Load more (desktop/table) */}
+          {displayedOrders.length < filteredOrders.length && (
+            <div className="hidden md:flex justify-center mt-4">
+              <button onClick={() => setPage(p => p + 1)} className="bg-gray-100 px-4 py-2 rounded-md">Cargar más</button>
+            </div>
+          )}
+
       {/* Modal de detalles del pedido */}
       {showDetailModal && selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-y-auto">
-            <div className="p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-t-lg sm:rounded-lg w-full sm:max-w-4xl max-h-screen overflow-y-auto">
+            <div className="p-4 sm:p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">
                   Detalles del Pedido #{selectedOrder.orderNumber || selectedOrder.id.slice(0, 8)}
@@ -381,18 +536,18 @@ const OrderManagement = () => {
                     Información del Cliente
                   </h3>
                   <div className="space-y-2 text-sm">
-                    <p><strong>Nombre:</strong> {selectedOrder.customer?.firstName} {selectedOrder.customer?.lastName}</p>
+                    <p><strong>Nombre:</strong> {selectedOrder.customerInfo?.fullName || `${selectedOrder.customer?.firstName || ''} ${selectedOrder.customer?.lastName || ''}`.trim()}</p>
                     <p className="flex items-center">
                       <Mail className="w-4 h-4 mr-1" />
-                      {selectedOrder.customer?.email}
+                      {selectedOrder.customerInfo?.email || selectedOrder.customer?.email}
                     </p>
                     <p className="flex items-center">
                       <Phone className="w-4 h-4 mr-1" />
-                      {selectedOrder.customer?.phone}
+                      {selectedOrder.customerInfo?.phone || selectedOrder.customer?.phone}
                     </p>
                     <p className="flex items-center">
                       <MapPin className="w-4 h-4 mr-1" />
-                      {selectedOrder.customer?.address}, {selectedOrder.customer?.city}
+                      {selectedOrder.shippingAddress?.address || selectedOrder.customer?.address}, {selectedOrder.shippingAddress?.city || selectedOrder.customer?.city}
                     </p>
                   </div>
                 </div>
@@ -475,15 +630,19 @@ const OrderManagement = () => {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
-                    <span>Bs. {selectedOrder.summary?.subtotal?.toFixed(2) || '0.00'}</span>
+                    <span>Bs. {(selectedOrder.payment?.total - selectedOrder.payment?.shipping || selectedOrder.summary?.subtotal || 0)?.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between py-2">
                     <span>Delivery:</span>
-                    <span>Bs. {selectedOrder.summary?.shipping?.toFixed(2) || '0.00'}</span>
+                    <span>Bs. {(selectedOrder.payment?.shipping || selectedOrder.summary?.shipping || 0)?.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between py-2 font-bold border-t pt-2">
                     <span>Total:</span>
-                    <span>Bs. {selectedOrder.summary?.total?.toFixed(2) || '0.00'}</span>
+                    <span>Bs. {(selectedOrder.payment?.total || selectedOrder.summary?.total || 0)?.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between py-1 text-xs text-gray-600">
+                    <span>Método de pago:</span>
+                    <span>{selectedOrder.payment?.method || 'No especificado'}</span>
                   </div>
                 </div>
               </div>
@@ -496,6 +655,15 @@ const OrderManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Confirm modal (reusable) */}
+      <ConfirmModal
+        open={confirmState.open}
+        title={confirmState.title}
+        message={confirmState.message}
+        onConfirm={confirmState.onConfirm}
+        onCancel={() => setConfirmState(s => ({ ...s, open: false }))}
+      />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, ShoppingCart, Users, TrendingUp, Database, Tag, Activity, DollarSign } from 'lucide-react';
+import { Package, ShoppingCart, Users, TrendingUp, Database, Tag, Activity, DollarSign, User } from 'lucide-react';
 import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 
@@ -130,169 +130,215 @@ const AdminDashboard = () => {
   }, []);
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard de Administración</h1>
+    <div className="space-y-6">
+      {/* Header compacto */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-sm text-gray-600 mt-1">Panel de control y estadísticas</p>
+        </div>
         <button
           onClick={fetchStats}
           disabled={stats.loading}
-          className="bg-cyan-600 text-white px-4 py-2 rounded-md hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center"
+          className="bg-cyan-600 text-white px-3 py-2 rounded-lg hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center text-sm"
         >
-          <TrendingUp className="w-4 h-4 mr-2" />
-          {stats.loading ? 'Actualizando...' : 'Actualizar Datos'}
+          <TrendingUp className="w-4 h-4 mr-1.5" />
+          {stats.loading ? 'Actualizando...' : 'Actualizar'}
         </button>
       </div>
 
       {/* Mostrar errores si los hay */}
       {stats.error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
           <strong>Error:</strong> {stats.error}
         </div>
       )}
       
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* Stats Cards - Más compactas */}
+  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Productos Totales */}
-        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
+  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center">
-            <div className="bg-blue-100 p-3 rounded-lg">
-              <Package className="text-blue-600" size={24} />
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <Package className="text-blue-600" size={20} />
             </div>
-            <div className="ml-4">
-              <p className="text-sm text-gray-600">Total Productos</p>
-              <p className="text-2xl font-bold text-blue-600">
+            <div className="ml-3 min-w-0 flex-1">
+              <p className="text-xs text-gray-600 truncate">Productos</p>
+              <p className="text-xl font-bold text-blue-600">
                 {stats.loading ? '...' : stats.productos}
               </p>
-              <p className="text-xs text-gray-500">En catálogo</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Ventas Pendientes */}
-        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
-          <div className="flex items-center">
-            <div className="bg-green-100 p-3 rounded-lg">
-              <Activity className="text-green-600" size={24} />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm text-gray-600">Ventas Pendientes</p>
-              <p className="text-2xl font-bold text-green-600">
-                {stats.loading ? '...' : `$${stats.ventasPendientes.toFixed(2)}`}
-              </p>
-              <p className="text-xs text-gray-500">Por confirmar</p>
             </div>
           </div>
         </div>
 
         {/* Pedidos Totales */}
-        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-orange-500">
+  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center">
-            <div className="bg-orange-100 p-3 rounded-lg">
-              <ShoppingCart className="text-orange-600" size={24} />
+            <div className="bg-orange-100 p-2 rounded-lg">
+              <ShoppingCart className="text-orange-600" size={20} />
             </div>
-            <div className="ml-4">
-              <p className="text-sm text-gray-600">Total Pedidos</p>
-              <p className="text-2xl font-bold text-orange-600">
+            <div className="ml-3 min-w-0 flex-1">
+              <p className="text-xs text-gray-600 truncate">Pedidos</p>
+              <p className="text-xl font-bold text-orange-600">
                 {stats.loading ? '...' : stats.pedidos}
               </p>
-              <p className="text-xs text-gray-500">Historial completo</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Ventas Pendientes */}
+  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center">
+            <div className="bg-green-100 p-2 rounded-lg">
+              <Activity className="text-green-600" size={20} />
+            </div>
+            <div className="ml-3 min-w-0 flex-1">
+              <p className="text-xs text-gray-600 truncate">Pendientes</p>
+              <p className="text-lg font-bold text-green-600">
+                {stats.loading ? '...' : `$${stats.ventasPendientes.toFixed(0)}`}
+              </p>
             </div>
           </div>
         </div>
         
         {/* Ventas Hoy */}
-        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500">
+  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center">
-            <div className="bg-purple-100 p-3 rounded-lg">
-              <DollarSign className="text-purple-600" size={24} />
+            <div className="bg-purple-100 p-2 rounded-lg">
+              <DollarSign className="text-purple-600" size={20} />
             </div>
-            <div className="ml-4">
-              <p className="text-sm text-gray-600">Ventas Hoy</p>
-              <p className="text-2xl font-bold text-purple-600">
-                {stats.loading ? '...' : `$${stats.ventasHoy.toFixed(2)}`}
+            <div className="ml-3 min-w-0 flex-1">
+              <p className="text-xs text-gray-600 truncate">Hoy</p>
+              <p className="text-lg font-bold text-purple-600">
+                {stats.loading ? '...' : `$${stats.ventasHoy.toFixed(0)}`}
               </p>
-              <p className="text-xs text-gray-500">Solo completadas</p>
             </div>
           </div>
         </div>
       </div>
       
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Gestión de Productos</h2>
-          <p className="text-gray-600 mb-4">
-            Administra tu inventario, añade nuevos productos y actualiza precios.
+      {/* Quick Actions - Más compactas y mejor distribuidas */}
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-center mb-3">
+            <Package className="w-5 h-5 text-blue-600 mr-2" />
+            <h3 className="font-semibold text-gray-900">Productos</h3>
+          </div>
+          <p className="text-sm text-gray-600 mb-3">
+            Gestiona inventario y precios
           </p>
           <Link 
             to="/admin/productos"
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+            className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 text-sm inline-flex items-center"
           >
-            Gestionar Productos
+            Gestionar
           </Link>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Gestión de Categorías</h2>
-          <p className="text-gray-600 mb-4">
-            Organiza tus productos en categorías para mejor navegación.
+  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-center mb-3">
+            <Tag className="w-5 h-5 text-purple-600 mr-2" />
+            <h3 className="font-semibold text-gray-900">Categorías</h3>
+          </div>
+          <p className="text-sm text-gray-600 mb-3">
+            Organiza productos
           </p>
           <Link 
             to="/admin/categorias"
-            className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 inline-flex items-center"
+            className="bg-purple-600 text-white px-3 py-1.5 rounded-md hover:bg-purple-700 text-sm inline-flex items-center"
           >
-            <Tag className="w-4 h-4 mr-2" />
-            Ver Categorías
+            Ver
           </Link>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Gestión de Pedidos</h2>
-          <p className="text-gray-600 mb-4">
-            Revisa pedidos pendientes, confirma pagos y gestiona entregas.
+  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-center mb-3">
+            <ShoppingCart className="w-5 h-5 text-green-600 mr-2" />
+            <h3 className="font-semibold text-gray-900">Pedidos</h3>
+          </div>
+          <p className="text-sm text-gray-600 mb-3">
+            Gestiona entregas
           </p>
           <Link 
             to="/admin/pedidos"
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+            className="bg-green-600 text-white px-3 py-1.5 rounded-md hover:bg-green-700 text-sm inline-flex items-center"
           >
-            Ver Pedidos
+            Ver
           </Link>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Inicializar Datos</h2>
-          <p className="text-gray-600 mb-4">
-            Carga productos y categorías de muestra para comenzar tu tienda.
+        {/* Datos panel removed by request */}
+
+  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-center mb-3">
+            <Users className="w-5 h-5 text-indigo-600 mr-2" />
+            <h3 className="font-semibold text-gray-900">Admins</h3>
+          </div>
+          <p className="text-sm text-gray-600 mb-3">
+            Gestionar usuarios
           </p>
           <Link 
-            to="/admin/inicializar"
-            className="bg-cyan-600 text-white px-4 py-2 rounded-md hover:bg-cyan-700 inline-flex items-center"
+            to="/admin/usuarios"
+            className="bg-indigo-600 text-white px-3 py-1.5 rounded-md hover:bg-indigo-700 text-sm inline-flex items-center"
           >
-            <Database className="w-4 h-4 mr-2" />
-            Poblar Base de Datos
+            Gestionar
+          </Link>
+        </div>
+
+  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-center mb-3">
+            <User className="w-5 h-5 text-pink-600 mr-2" />
+            <h3 className="font-semibold text-gray-900">Mi Perfil</h3>
+          </div>
+          <p className="text-sm text-gray-600 mb-3">
+            Editar datos
+          </p>
+          <Link 
+            to="/admin/perfil"
+            className="bg-pink-600 text-white px-3 py-1.5 rounded-md hover:bg-pink-700 text-sm inline-flex items-center"
+          >
+            Editar
           </Link>
         </div>
       </div>
       
-      {/* Notice */}
-      <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <div className="flex items-start">
-          <Database className="w-6 h-6 text-blue-600 mt-1 mr-4 shrink-0" />
-          <div>
-            <h3 className="text-lg font-semibold text-blue-900 mb-2">
-              🚀 ¡Primeros Pasos con Zapastroso!
-            </h3>
-            <p className="text-blue-800 mb-4">
-              Para comenzar tu tienda, necesitas poblar la base de datos con productos iniciales. 
-              Esto te permitirá ver cómo funciona todo el sistema.
-            </p>
-            <Link 
-              to="/admin/inicializar"
-              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 inline-flex items-center font-medium"
-            >
-              <Database className="w-4 h-4 mr-2" />
-              Inicializar Datos Ahora
-            </Link>
+      {/* Notice - Más compacto */}
+      {/* "Primeros Pasos" notice removed by request */}
+
+      {/* Información adicional en espacio libre */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-linear-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-start">
+            <ShoppingCart className="w-5 h-5 text-green-600 mt-0.5 mr-3 shrink-0" />
+            <div className="flex-1">
+              <h3 className="text-base font-semibold text-green-900 mb-1">
+                📊 Estado de Ventas
+              </h3>
+              <p className="text-sm text-green-800 mb-2">
+                {stats.loading ? 'Cargando...' : `${stats.pedidos} pedidos procesados hasta ahora`}
+              </p>
+              <div className="text-xs text-green-700">
+                <span className="font-medium">${stats.ventasHoy.toFixed(0)}</span> vendido hoy • 
+                <span className="font-medium"> ${stats.ventasPendientes.toFixed(0)}</span> pendiente
+              </div>
+            </div>
+          </div>
+        </div>
+
+  <div className="bg-linear-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-4">
+          <div className="flex items-start">
+            <Package className="w-5 h-5 text-purple-600 mt-0.5 mr-3 shrink-0" />
+            <div className="flex-1">
+              <h3 className="text-base font-semibold text-purple-900 mb-1">
+                📦 Inventario
+              </h3>
+              <p className="text-sm text-purple-800 mb-2">
+                {stats.loading ? 'Cargando...' : `${stats.productos} productos en catálogo`}
+              </p>
+              <div className="text-xs text-purple-700">
+                Gestiona tu inventario y mantén el stock actualizado
+              </div>
+            </div>
           </div>
         </div>
       </div>

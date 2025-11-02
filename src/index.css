@@ -18,6 +18,8 @@ html {
 }
 
 body {
+  margin: 0;
+  padding: 0;
   background-color: #f9fafb;
   color: #111827;
 }
@@ -152,6 +154,48 @@ html[data-theme="light"] #root {
   border-top-color: #3b82f6;
 }
 
+/* Modo admin: cuando la app muestra el panel admin necesitamos que #root ocupe el ancho completo
+   para que elementos fixed (sidebar) puedan alinearse con el borde del viewport. */
+.admin-mode #root {
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* Fix: prevenir margen/overflow horizontal inesperado en el lado derecho.
+   Esto evita que elementos con transform/anchos extra creen un espacio a la derecha
+   y garantiza que el root ocupe todo el ancho del viewport. */
+html, body, #root {
+  overscroll-behavior-x: none;
+  overflow-x: hidden;
+}
+
+/* Normalizar padding horizontal mínimo para los contenedores principales.
+   Los componentes siguen usando las utilidades de Tailwind, pero esta regla
+   reduce la posibilidad de dejar un gran margen derecho en anchos intermedios. */
+.max-w-7xl {
+  /* Default mobile padding ~ px-4 */
+  padding-left: 1rem; /* 16px */
+  padding-right: 1rem;
+  box-sizing: border-box;
+}
+
+/* Match Tailwind container horizontal paddings: sm:px-6 (24px), lg:px-8 (32px) */
+@media (min-width: 640px) {
+  .max-w-7xl {
+    padding-left: 1.5rem; /* 24px */
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .max-w-7xl {
+    padding-left: 2rem; /* 32px */
+    /* Right padding increased to 40px for a wider right gutter on large screens */
+    padding-right: 2.5rem; /* 40px */
+  }
 }

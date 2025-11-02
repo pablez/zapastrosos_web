@@ -28,7 +28,7 @@
 - ✅ Dashboard con métricas
 - ✅ Gestión de productos (estructura lista)
 - ✅ Gestión de pedidos (estructura lista)
-- ✅ Inicializador de datos con UI profesional
+- ✅ Inicialización de datos disponible mediante scripts (la UI pública fue removida)
 
 #### **5. 🗄️ Base de Datos:**
 - ✅ Firestore configurado y conectado
@@ -53,7 +53,7 @@ http://localhost:5173/login
 http://localhost:5173/admin
 
 # 🗄️ Inicializar Datos
-http://localhost:5173/admin/inicializar
+La inicialización automática desde la UI fue removida. Para poblar datos de prueba, usa scripts o la consola de Firebase (ver sección "Paso 2" abajo).
 
 # 🧪 Test de Firebase
 http://localhost:5173/firebase-test
@@ -66,10 +66,11 @@ http://localhost:5173/firebase-test
 2. Completa el formulario con código: `ZAPASTROSO_ADMIN_2025`
 3. ¡Se creará tu usuario admin y serás redirigido!
 
-### **Paso 2: Poblar Base de Datos**
-1. Ve a: `http://localhost:5173/admin/inicializar`
-2. Haz clic en "Inicializar Base de Datos"
-3. ¡Se cargarán productos y categorías de muestra!
+### **Paso 2: Poblar Base de Datos (opcional)**
+1. La UI de inicialización fue removida por seguridad. Para poblar datos de prueba:
+	- Ejecuta un script de inicialización (puedo generarlo si lo deseas).
+	- O crea documentos manualmente desde la consola de Firebase.
+2. Tras poblar, visita la tienda para verificar los productos.
 
 ### **Paso 3: Activar Storage (Opcional)**
 1. Ve a: [Firebase Console - Storage](https://console.firebase.google.com/project/zapastrosos-web/storage)

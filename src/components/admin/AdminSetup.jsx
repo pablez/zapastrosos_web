@@ -149,12 +149,12 @@ const AdminSetup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 to-teal-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-cyan-50 to-teal-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-cyan-500 to-teal-600 rounded-full mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-r from-cyan-500 to-teal-600 rounded-full mb-4">
               <Shield className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -304,7 +304,7 @@ const AdminSetup = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-cyan-600 to-teal-600 text-white py-3 px-4 rounded-lg font-medium hover:from-cyan-700 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              className="w-full bg-linear-to-r from-cyan-600 to-teal-600 text-white py-3 px-4 rounded-lg font-medium hover:from-cyan-700 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
               {loading ? 'Creando Administrador...' : 'Crear Administrador'}
             </button>

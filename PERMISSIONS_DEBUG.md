@@ -9,8 +9,8 @@ Missing or insufficient permissions
 
 ### 📋 **1. Verificar Estado del Usuario:**
 
-#### **Ir a:** `http://localhost:5173/admin/inicializar`
-En la parte inferior verás un panel "🔍 Debug de Permisos" que te mostrará:
+#### **Ir a:** `http://localhost:5173/firebase-test` (o usa la consola de Firebase)
+En esta página encontrarás herramientas para probar la conexión a Firebase y ver mensajes de estado; para verificar permisos, consulta directamente la colección `users` en la consola de Firebase.
 - ✅ Si estás autenticado
 - ✅ Tu email y UID
 - ✅ Si tu documento existe en Firestore
@@ -79,18 +79,16 @@ https://console.firebase.google.com/project/zapastrosos-web/firestore
 
 #### **Paso 3: Verificar Permisos**
 ```bash
-# Ve al debug de permisos
-http://localhost:5173/admin/inicializar
-
-# Haz clic en "Verificar Permisos"
-# Todo debe estar en verde
+# Verifica permisos desde la consola de Firebase o usando `/firebase-test`
 ```
 
-#### **Paso 4: Intentar Inicializar Datos**
-```bash
-# Si todo está correcto, haz clic en:
-"Inicializar Base de Datos"
-```
+#### **Paso 4: Población de Datos (opcional)**
+La UI para inicializar datos fue removida. Si necesitas poblar datos para pruebas y ya verificaste permisos:
+
+- Ejecuta un script de inicialización (puedo generarlo para ti).
+- O inserta documentos manualmente desde la consola de Firebase.
+
+Evita cambiar reglas de seguridad de forma permanente — solo úsalas temporalmente para debugging si es estrictamente necesario.
 
 ### 🚨 **4. Soluciones de Emergencia:**
 

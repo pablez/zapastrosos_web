@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import { Map, MapPin, Search, Navigation, Check, X } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { searchAddress, getAddressFromCoords } from '../../services/geocodingService';
 
 // Fix para los iconos de Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -16,11 +17,14 @@ L.Icon.Default.mergeOptions({
 const LocationSelector = ({ onLocationSelect, selectedLocation }) => {
   useMapEvents({
     click(e) {
-      onLocationSelect(e.latlng);
+      const { lat, lng } = e.latlng;
+      if (typeof lat === 'number' && typeof lng === 'number') {
+        onLocationSelect(e.latlng);
+      }
     },
   });
 
-  return selectedLocation ? (
+  return selectedLocation?.lat && selectedLocation?.lng ? (
     <Marker position={[selectedLocation.lat, selectedLocation.lng]} />
   ) : null;
 };
@@ -38,9 +42,22 @@ const MapController = ({ center, zoom }) => {
   return null;
 };
 
-const MapLocationPicker = ({ onLocationConfirm, onClose, initialLocation }) => {
-  const [selectedLocation, setSelectedLocation] = useState(initialLocation || null);
-  const [address, setAddress] = useState('');
+const MapLocationPicker = ({ onLocationConfirm, onLocationSelect, onClose, initialLocation }) => {
+  // normalizar initialLocation: puede venir como { coordinates: {lat,lng}, address }
+  const normalizeInitial = (init) => {
+    if (!init) return null;
+    if (init.coordinates && typeof init.coordinates.lat === 'number' && typeof init.coordinates.lng === 'number') {
+      return { lat: init.coordinates.lat, lng: init.coordinates.lng };
+    }
+    if (typeof init.lat === 'number' && typeof init.lng === 'number') {
+      return { lat: init.lat, lng: init.lng };
+    }
+    return null;
+  };
+
+  const [selectedLocation, setSelectedLocation] = useState(normalizeInitial(initialLocation));
+  const [address, setAddress] = useState(initialLocation && initialLocation.address ? initialLocation.address : '');
+  const [fetchError, setFetchError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [mapCenter, setMapCenter] = useState([-12.0464, -77.0428]); // Lima, Perú por defecto
@@ -70,62 +87,64 @@ const MapLocationPicker = ({ onLocationConfirm, onClose, initialLocation }) => {
     
     setIsLoading(true);
     try {
-      // Usar API de Nominatim (gratuita) para geocodificación
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1&countrycodes=pe`
-      );
-      const data = await response.json();
-      
-      if (data && data.length > 0) {
-        const result = data[0];
-        const lat = parseFloat(result.lat);
-        const lng = parseFloat(result.lon);
-        
-        setMapCenter([lat, lng]);
-        setZoom(17); // Zoom apropiado para búsqueda
-        setSelectedLocation({ lat, lng });
+      const result = await searchAddress(searchQuery);
+      if (result) {
+        setMapCenter([result.lat, result.lng]);
+        setZoom(17);
+        setSelectedLocation({ lat: result.lat, lng: result.lng });
         setAddress(result.display_name);
       } else {
-        alert('No se encontró la dirección. Intenta con una búsqueda más específica.');
+        setFetchError(true);
       }
     } catch (error) {
       console.error('Error en la búsqueda:', error);
-      alert('Error al buscar la dirección');
+      setFetchError(true);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Función para obtener la dirección desde coordenadas (geocodificación inversa)
-  const getAddressFromCoords = async (lat, lng) => {
+  // Función para obtener la dirección desde coordenadas
+  const handleGetAddress = async (lat, lng) => {
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`
-      );
-      const data = await response.json();
-      
-      if (data && data.display_name) {
-        setAddress(data.display_name);
+      setFetchError(false);
+      const result = await getAddressFromCoords(lat, lng);
+      if (result && result.display_name) {
+        setAddress(result.display_name);
+      } else {
+        setAddress('Dirección no disponible');
+        setFetchError(true);
       }
     } catch (error) {
       console.error('Error obteniendo dirección:', error);
+      setAddress('Dirección no disponible');
+      setFetchError(true);
     }
   };
 
   // Manejar selección de ubicación en el mapa
   const handleLocationSelect = (latlng) => {
+    if (!latlng || typeof latlng.lat !== 'number' || typeof latlng.lng !== 'number') {
+      console.error('Coordenadas inválidas:', latlng);
+      return;
+    }
     setSelectedLocation({ lat: latlng.lat, lng: latlng.lng });
-    getAddressFromCoords(latlng.lat, latlng.lng);
+    handleGetAddress(latlng.lat, latlng.lng);
   };
 
   // Confirmar ubicación seleccionada
   const handleConfirmLocation = () => {
     if (selectedLocation) {
-      onLocationConfirm({
-        coordinates: selectedLocation,
-        address: address,
-        timestamp: new Date()
-      });
+      const confirm = onLocationConfirm || onLocationSelect;
+      if (typeof confirm === 'function') {
+        confirm({
+          coordinates: selectedLocation,
+          address: address,
+          timestamp: new Date()
+        });
+      } else {
+        console.warn('MapLocationPicker: no confirmation callback provided');
+      }
     }
   };
 
@@ -242,6 +261,41 @@ const MapLocationPicker = ({ onLocationConfirm, onClose, initialLocation }) => {
               selectedLocation={selectedLocation}
             />
           </MapContainer>
+          {/* Cuadro compacto con dirección (sobre el mapa) */}
+          {selectedLocation && address && (
+            <div className="absolute right-4 bottom-6 bg-white rounded-lg shadow-lg p-3 w-72 z-40">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{address}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {selectedLocation.lat.toFixed(6)}, {selectedLocation.lng.toFixed(6)}
+                  </p>
+                </div>
+                <button
+                  onClick={() => { setSelectedLocation(null); setAddress(''); }}
+                  className="text-gray-400 hover:text-gray-600 ml-2"
+                  title="Cancelar selección"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="mt-3 flex justify-end space-x-2">
+                <button
+                  onClick={() => { if (onClose) onClose(); }}
+                  className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                >
+                  Cerrar
+                </button>
+                <button
+                  onClick={handleConfirmLocation}
+                  className="px-3 py-1 bg-cyan-600 text-white rounded text-sm hover:bg-cyan-700"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          )}
           
           {/* Indicador de clic */}
           <div className="absolute top-4 left-4 bg-white bg-opacity-90 p-3 rounded-lg shadow-lg">

@@ -9,6 +9,7 @@ import { Search, Filter, Grid, List, Star, ShoppingCart, Check, Percent, Sparkle
 import ThemeToggle from '../ui/ThemeToggle';
 
 const ProductCatalog = () => {
+  const FALLBACK_SVG = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2NjYyIgdmlld0JveD0iMCAwIDI0IDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPjwvc3ZnPg==';
   const { getCartItemsCount } = useCart();
   const { theme } = useTheme(); // Agregar tema para forzar re-render
   const [searchParams] = useSearchParams();
@@ -513,11 +514,11 @@ const ProductCard = ({ product, viewMode }) => {
             {/* Imagen */}
             <div className="shrink-0 w-32 h-32">
               <img
-                src={product.mainImageUrl || '/placeholder-image.jpg'}
+                src={product.mainImageUrl || FALLBACK_SVG}
                 alt={product.name}
                 className="w-full h-full object-cover rounded-lg"
                 onError={(e) => {
-                  e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgZmlsbD0iI2NjYyIgdmlld0JveD0iMCAwIDI0IDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPjwvc3ZnPg==';
+                  e.target.src = FALLBACK_SVG;
                 }}
               />
             </div>
@@ -613,11 +614,11 @@ const ProductCard = ({ product, viewMode }) => {
       {/* Imagen */}
       <div className="aspect-square overflow-hidden">
         <img
-          src={product.mainImageUrl || '/placeholder-image.jpg'}
+          src={product.mainImageUrl || FALLBACK_SVG}
           alt={product.name}
           className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
           onError={(e) => {
-            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2NjYyIgdmlld0JveD0iMCAwIDI0IDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPjwvc3ZnPg==';
+            e.target.src = FALLBACK_SVG;
           }}
         />
       </div>

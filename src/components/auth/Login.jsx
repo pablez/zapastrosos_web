@@ -105,9 +105,9 @@ const Login = () => {
                 e.target.nextSibling.style.display = 'flex';
               }}
             />
-            <div style={{display: 'none'}} className="hidden flex-col items-center space-y-2">
+              <div style={{display: 'none'}} className="hidden flex-col items-center space-y-2">
               <span className="text-6xl">👟</span>
-              <span className="text-3xl font-bold bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">
+              <span className="text-3xl font-bold bg-linear-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">
                 Zapastroso
               </span>
             </div>
@@ -122,7 +122,7 @@ const Login = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start space-x-3">
-              <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+              <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
               <div>
                 <p className="font-medium">Error de autenticación</p>
                 <p className="text-sm">{error}</p>
@@ -184,7 +184,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-linear-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
               {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
             </button>

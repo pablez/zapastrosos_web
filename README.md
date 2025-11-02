@@ -174,8 +174,8 @@ npm run lint:fix       # Corregir errores automáticos
 - [x] Panel de administrador funcional
 - [x] Diseño responsive con Tailwind CSS
 
-### **🚧 En Desarrollo:**
-- [ ] Población de datos iniciales
+- ### **🚧 En Desarrollo / Notas:**
+- [ ] Población de datos (la UI de inicialización fue removida; usar scripts o la consola de Firebase)
 - [ ] Testing integral del sistema
 - [ ] Optimizaciones de rendimiento
 - [ ] Deploy de producción

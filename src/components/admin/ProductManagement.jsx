@@ -101,6 +101,8 @@ const ProductManagement = () => {
     loadProducts();
   }, []);
 
+  const FALLBACK_SVG = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIGZpbGw9IiNjY2MiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptLTIgMTVsLTUtNSAxLjQxLTEuNDFMMTAgMTQuMTdsNy41OS03LjU5TDE5IDhsLTkgOXoiLz48L3N2Zz4=';
+
   // Filtrar productos
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -221,8 +223,65 @@ const ProductManagement = () => {
         </div>
       </div>
 
-      {/* Products Table */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      {/* Products: mobile cards (md:hidden) and table for md+ */}
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-3 mb-4">
+        {filteredProducts.length === 0 ? (
+          <div className="bg-white p-4 rounded-lg shadow-sm text-center text-gray-500">
+            {products.length === 0
+              ? 'No hay productos cargados. Usa el botón "Nuevo Producto" para crear uno.'
+              : 'No se encontraron productos con los filtros aplicados.'}
+          </div>
+        ) : (
+          filteredProducts.map(product => (
+            <div key={product.id} className="bg-white p-4 rounded-lg shadow-sm">
+              <div className="flex items-start space-x-3">
+                <img
+                  src={product.mainImageUrl || FALLBACK_SVG}
+                  alt={product.name}
+                  className="h-16 w-16 rounded-lg object-cover shrink-0"
+                  onError={(e) => { e.target.src = FALLBACK_SVG; }}
+                />
+                <div className="flex-1">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                      <div className="text-xs text-gray-500">ID: {product.id}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-semibold text-gray-900">Bs. {product.basePrice?.toFixed(2) || 'N/A'}</div>
+                      <div className="text-xs text-gray-500">{product.category}</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 flex items-center justify-between">
+                    <div>
+                      <div className={`text-sm font-medium ${
+                        (product.stock || 0) <= 5 ? 'text-red-600' : 
+                        (product.stock || 0) <= 20 ? 'text-yellow-600' : 'text-green-600'
+                      }`}>
+                        {product.stock !== undefined ? `${product.stock} unidades` : 'N/A'}
+                      </div>
+                      {(product.stock || 0) <= 5 && product.stock !== undefined && (
+                        <div className="text-xs text-red-500">Stock bajo</div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <button onClick={() => handleViewProduct(product)} className="text-blue-600" title="Ver detalles"><Eye className="w-4 h-4" /></button>
+                      <button onClick={() => handleEditProduct(product)} className="text-yellow-600" title="Editar"><Edit className="w-4 h-4" /></button>
+                      <button onClick={() => deleteProduct(product.id, product.name)} className="text-red-600" title="Eliminar"><Trash2 className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop / tablet table (hidden on small screens) */}
+      <div className="hidden md:block bg-white rounded-lg shadow-md overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -255,7 +314,7 @@ const ProductManagement = () => {
                 <tr>
                   <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
                     {products.length === 0 
-                      ? 'No hay productos cargados. Ve a "Inicializar Datos" para cargar productos de muestra.'
+                      ? 'No hay productos cargados. Usa el botón "Nuevo Producto" para crear uno.'
                       : 'No se encontraron productos con los filtros aplicados.'
                     }
                   </td>
@@ -268,10 +327,10 @@ const ProductManagement = () => {
                         <div className="shrink-0 h-12 w-12">
                           <img
                             className="h-12 w-12 rounded-lg object-cover"
-                            src={product.mainImageUrl || '/placeholder-image.jpg'}
+                            src={product.mainImageUrl || FALLBACK_SVG}
                             alt={product.name}
                             onError={(e) => {
-                              e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIGZpbGw9IiNjY2MiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptLTIgMTVsLTUtNSAxLjQxLTEuNDFMMTAgMTQuMTdsNy41OS03LjU5TDE5IDhsLTkgOXoiLz48L3N2Zz4=';
+                              e.target.src = FALLBACK_SVG;
                             }}
                           />
                         </div>

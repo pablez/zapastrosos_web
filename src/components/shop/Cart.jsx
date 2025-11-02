@@ -9,9 +9,7 @@ import {
   Trash2, 
   ArrowLeft, 
   CreditCard,
-  Gift,
   Percent,
-  Shield,
   Truck
 } from 'lucide-react';
 import ThemeToggle from '../ui/ThemeToggle';
@@ -40,6 +38,8 @@ const Cart = () => {
   const shipping = subtotal > 200 ? 0 : 15; // Envío gratis por encima de Bs. 200
   const promoDiscount = promoApplied ? subtotal * 0.1 : 0; // 10% de descuento
   const total = subtotal + shipping - promoDiscount;
+
+  const FALLBACK_SVG = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIGZpbGw9IiNjY2MiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptLTIgMTVsLTUtNSAxLjQxLTEuNDFMMTAgMTQuMTdsNy41OS03LjU5TDE5IDhsLTkgOXoiLz48L3N2Zz4=';
 
   // Manejar aplicar cupón
   const handleApplyPromo = () => {
@@ -158,7 +158,7 @@ const Cart = () => {
                 </div>
 
                 {/* Lista de productos */}
-                <div className="divide-y divide-gray-200">
+                <div className="divide-y divide-gray-200 dark:divide-gray-600">
                   {items.map((item) => (
                     <CartItem 
                       key={`${item.tenisId}-${item.variantId}`}
@@ -253,14 +253,6 @@ const Cart = () => {
                       <Truck className="w-4 h-4 text-green-600 dark:text-green-400 mr-2" />
                       <span>Envío gratis en pedidos +Bs. 200</span>
                     </div>
-                    <div className="flex items-center">
-                      <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400 mr-2" />
-                      <span>Garantía de autenticidad</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Gift className="w-4 h-4 text-purple-600 dark:text-purple-400 mr-2" />
-                      <span>Devoluciones gratuitas 30 días</span>
-                    </div>
                   </div>
                 </div>
 
@@ -303,7 +295,7 @@ const Cart = () => {
   );
 };
 
-// Componente para cada item del carrito
+// Componente para cada item del carrito - Mejorado y Responsivo
 const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -334,117 +326,140 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
   const stockInsuficiente = item.quantity > stockDisponible;
 
   return (
-    <div className={`p-6 ${stockInsuficiente ? 'bg-red-50 border-l-4 border-red-500' : ''}`}>
+    <div className={`p-4 sm:p-6 transition-colors duration-300 ${
+      stockInsuficiente 
+        ? 'bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 dark:border-red-400' 
+        : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+    }`}>
       {/* Alerta de stock insuficiente */}
       {stockInsuficiente && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-200 rounded-lg">
+        <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/40 border border-red-200 dark:border-red-700 rounded-lg">
           <div className="flex items-center">
-            <div className="text-red-600 font-medium text-sm">
-              ⚠️ Stock insuficiente: Solo hay {stockDisponible} unidades disponibles
+            <div className="text-red-600 dark:text-red-400 font-medium text-sm flex items-center">
+              <span className="text-lg mr-2">⚠️</span>
+              Stock insuficiente: Solo hay {stockDisponible} unidades disponibles
             </div>
           </div>
         </div>
       )}
       
-      <div className="flex items-start space-x-4">
-        {/* Imagen del producto */}
-        <div className="shrink-0 w-24 h-24">
-          <img
-            src={item.imagenPrincipal || '/placeholder-image.jpg'}
-            alt={item.nombre}
-            className="w-full h-full object-cover rounded-lg"
-            onError={(e) => {
-              e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIGZpbGw9IiNjY2MiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptLTIgMTVsLTUtNSAxLjQxLTEuNDFMMTAgMTQuMTdsNy41OS03LjU5TDE5IDhsLTkgOXoiLz48L3N2Zz4=';
-            }}
-          />
+      {/* Layout Responsivo */}
+      <div className="flex flex-col sm:flex-row sm:items-start space-y-4 sm:space-y-0 sm:space-x-4">
+        {/* Imagen del producto - Responsiva */}
+        <div className="shrink-0 w-full sm:w-24 md:w-32 lg:w-36">
+          <div className="aspect-square w-full sm:w-24 md:w-32 lg:w-36 mx-auto sm:mx-0">
+            <img
+              src={item.imagenPrincipal || FALLBACK_SVG}
+              alt={item.nombre}
+              className="w-full h-full object-cover rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
+              onError={(e) => {
+                e.target.src = FALLBACK_SVG;
+              }}
+            />
+          </div>
         </div>
 
-        {/* Información del producto */}
+        {/* Información del producto - Layout Mejorado */}
         <div className="flex-1 min-w-0">
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900">{item.nombre}</h3>
-              <p className="text-gray-600">{item.marca}</p>
-              <div className="mt-1 space-x-4 text-sm text-gray-500">
-                <span>Talla: {item.talla}</span>
-                <span>Color: {item.color}</span>
-              </div>
-              
-              {/* Información de stock */}
-              <div className="mt-2 flex items-center space-x-2">
-                {stockDisponible > 0 ? (
-                  <>
-                    <div className={`w-2 h-2 rounded-full ${
-                      stockDisponible <= 5 ? 'bg-yellow-500' : 'bg-green-500'
-                    }`}></div>
-                    <span className={`text-xs font-medium ${
-                      stockDisponible <= 5 ? 'text-yellow-600' : 'text-green-600'
-                    }`}>
-                      {stockDisponible} en stock
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                    <span className="text-xs text-red-600 font-medium">
-                      Sin stock
-                    </span>
-                  </>
-                )}
-              </div>
-              
-              {/* Precio */}
-              <div className="mt-2">
-                {item.descuento > 0 ? (
-                  <div className="flex items-center space-x-2">
-                    <span className="text-lg font-bold text-red-600">
-                      Bs. {item.precio.toFixed(2)}
-                    </span>
-                    <span className="text-sm text-gray-500 line-through">
-                      Bs. {item.precioOriginal.toFixed(2)}
-                    </span>
-                    <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
-                      -{item.descuento}%
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-lg font-bold text-gray-900">
-                    Bs. {precio.toFixed(2)}
-                  </span>
-                )}
-              </div>
+          {/* Header con título y botón eliminar */}
+          <div className="flex justify-between items-start mb-3">
+            <div className="flex-1 min-w-0 pr-4">
+              <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white leading-tight truncate">
+                {item.nombre}
+              </h3>
+              <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 font-medium">
+                {item.marca}
+              </p>
             </div>
-
-            {/* Botón eliminar */}
+            
+            {/* Botón eliminar - Mejorado */}
             <button
               onClick={handleRemove}
-              className="text-gray-400 hover:text-red-500 transition-colors"
+              className="shrink-0 p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
               title="Eliminar producto"
             >
               <Trash2 className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Controles de cantidad y subtotal */}
-          <div className="mt-4 flex items-center justify-between">
-            {/* Control de cantidad */}
+          {/* Detalles del producto - Grid Responsivo */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 text-sm">
+            <div className="bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg">
+              <span className="block text-xs text-gray-500 dark:text-gray-400 font-medium">Talla</span>
+              <span className="font-semibold text-gray-900 dark:text-white">{item.talla}</span>
+            </div>
+            <div className="bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg">
+              <span className="block text-xs text-gray-500 dark:text-gray-400 font-medium">Color</span>
+              <span className="font-semibold text-gray-900 dark:text-white">{item.color}</span>
+            </div>
+            <div className="bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg">
+              <span className="block text-xs text-gray-500 dark:text-gray-400 font-medium">Stock</span>
+              <div className="flex items-center space-x-1">
+                <div className={`w-2 h-2 rounded-full ${
+                  stockDisponible === 0 ? 'bg-red-500' :
+                  stockDisponible <= 5 ? 'bg-yellow-500' : 'bg-green-500'
+                }`}></div>
+                <span className={`text-xs font-semibold ${
+                  stockDisponible === 0 ? 'text-red-600 dark:text-red-400' :
+                  stockDisponible <= 5 ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'
+                }`}>
+                  {stockDisponible}
+                </span>
+              </div>
+            </div>
+            <div className="bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg">
+              <span className="block text-xs text-gray-500 dark:text-gray-400 font-medium">Estado</span>
+              <span className={`text-xs font-semibold ${
+                item.tipo === 'nuevo' ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'
+              }`}>
+                {item.tipo === 'nuevo' ? 'Nuevo' : 'Medio Uso'}
+              </span>
+            </div>
+          </div>
+              
+          {/* Precio - Mejorado y Responsivo */}
+          <div className="mb-4 p-3 bg-linear-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 rounded-lg border border-cyan-100 dark:border-cyan-800">
+            {item.descuento > 0 ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xl md:text-2xl font-bold text-red-600 dark:text-red-400">
+                  Bs. {item.precio.toFixed(2)}
+                </span>
+                <span className="text-sm md:text-base text-gray-500 dark:text-gray-400 line-through">
+                  Bs. {item.precioOriginal.toFixed(2)}
+                </span>
+                <span className="inline-flex items-center text-xs bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300 px-2 py-1 rounded-full font-medium">
+                  <Percent className="w-3 h-3 mr-1" />
+                  -{item.descuento}%
+                </span>
+              </div>
+            ) : (
+              <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                Bs. {precio.toFixed(2)}
+              </span>
+            )}
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Precio por unidad</p>
+          </div>
+
+          {/* Controles de cantidad y subtotal - Layout Responsivo */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 border-t border-gray-200 dark:border-gray-600 pt-4">
+            {/* Control de cantidad - Mejorado */}
             <div className="flex items-center space-x-3">
-              <span className="text-sm text-gray-600">Cantidad:</span>
-              <div className="flex items-center border border-gray-300 rounded-lg">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Cantidad:</span>
+              <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 shadow-sm">
                 <button
                   onClick={() => handleQuantityChange(item.quantity - 1)}
                   disabled={item.quantity <= 1 || isUpdating}
-                  className="p-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 rounded-l-lg"
                 >
                   <Minus className="w-4 h-4" />
                 </button>
-                <span className="px-3 py-1 font-medium min-w-12 text-center">
+                <span className="px-4 py-2 font-semibold min-w-16 text-center text-gray-900 dark:text-white border-x border-gray-300 dark:border-gray-600">
                   {isUpdating ? '...' : item.quantity}
                 </span>
                 <button
                   onClick={() => handleQuantityChange(item.quantity + 1)}
                   disabled={isUpdating || item.quantity >= stockDisponible}
-                  className="p-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 rounded-r-lg"
                   title={item.quantity >= stockDisponible ? "Stock máximo alcanzado" : "Aumentar cantidad"}
                 >
                   <Plus className="w-4 h-4" />
@@ -452,19 +467,19 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
               </div>
             </div>
 
-            {/* Subtotal del item */}
-            <div className="text-right">
-              <div className="text-lg font-bold text-gray-900">
+            {/* Subtotal del item - Destacado */}
+            <div className="text-center sm:text-right">
+              <div className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 Bs. {subtotalItem.toFixed(2)}
               </div>
               {item.quantity > 1 && (
-                <div className="text-sm text-gray-500">
-                  Bs. {precio.toFixed(2)} c/u
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Bs. {precio.toFixed(2)} × {item.quantity}
                 </div>
               )}
               {stockInsuficiente && (
-                <div className="text-xs text-red-600 font-medium mt-1">
-                  Ajustar cantidad
+                <div className="text-xs text-red-600 dark:text-red-400 font-medium mt-1 animate-pulse">
+                  ⚠️ Ajustar cantidad
                 </div>
               )}
             </div>

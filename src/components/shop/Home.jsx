@@ -66,7 +66,7 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <div className="flex items-center flex-shrink-0">
+            <div className="flex items-center shrink-0">
               <Link to="/" className="flex items-center space-x-2">
                 <img 
                   src="/images/logos/zapastroso-logo.png" 
@@ -80,7 +80,7 @@ const Home = () => {
                 />
                 <div className="hidden items-center space-x-2" style={{display: 'none'}}>
                   <span className="text-2xl sm:text-3xl">👟</span>
-                  <span className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">
+                  <span className="text-lg sm:text-2xl font-bold bg-linear-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">
                     Zapastroso
                   </span>
                 </div>
@@ -128,7 +128,7 @@ const Home = () => {
                     </span>
                   )}
                 </Link>
-                <Link to="/login" className="bg-gradient-to-r from-cyan-500 to-teal-600 text-white px-4 py-2 rounded-md hover:from-cyan-600 hover:to-teal-700 transition duration-300 font-semibold shadow-md whitespace-nowrap">
+                <Link to="/login" className="bg-linear-to-r from-cyan-500 to-teal-600 text-white px-4 py-2 rounded-md hover:from-cyan-600 hover:to-teal-700 transition duration-300 font-semibold shadow-md whitespace-nowrap">
                   Admin
                 </Link>
               </div>
@@ -208,7 +208,7 @@ const Home = () => {
                 </Link>
                 <Link 
                   to="/login" 
-                  className="block mx-3 my-2 px-4 py-3 text-center bg-gradient-to-r from-cyan-500 to-teal-600 text-white rounded-md hover:from-cyan-600 hover:to-teal-700 transition duration-300 font-semibold shadow-md"
+                  className="block mx-3 my-2 px-4 py-3 text-center bg-linear-to-r from-cyan-500 to-teal-600 text-white rounded-md hover:from-cyan-600 hover:to-teal-700 transition duration-300 font-semibold shadow-md"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   👤 Admin
@@ -219,11 +219,54 @@ const Home = () => {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-cyan-600 via-teal-600 to-blue-700 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+  {/* Hero Section */}
+  <div className="bg-linear-to-r from-cyan-600 via-teal-600 to-blue-700 text-white py-4 md:py-6 lg:py-8 xl:py-10">
+        <div className="max-w-full mx-auto px-2 sm:px-4 lg:px-6 text-center">
+          {/* Logo de Letras Principal - Máximo Tamaño y Responsivo */}
+          <div className="mb-4 md:mb-6 lg:mb-8 xl:mb-10 flex justify-center items-center min-h-[20vh] md:min-h-[30vh] lg:min-h-[35vh]">
+            <img 
+              src="/images/logos/letras-logo.webp" 
+              alt="Zapastroso - Logo Letras" 
+                className="
+                w-[95%] sm:w-[90%] md:w-[85%] lg:w-[80%] xl:w-[75%]
+                h-auto
+                max-h-[220px] sm:max-h-[280px] md:max-h-[420px] lg:max-h-[420px]
+                drop-shadow-2xl 
+                hover:scale-[1.02] 
+                transition-all duration-700 ease-in-out
+                filter brightness-110
+                object-contain
+                mx-auto
+              "
+              style={{
+                filter: 'drop-shadow(0 30px 80px rgba(0,0,0,0.7)) brightness(1.3) contrast(1.15) saturate(1.1)',
+                aspectRatio: 'auto',
+                objectFit: 'contain',
+                objectPosition: 'center'
+              }}
+              onError={(e) => {
+                // Fallback si no se encuentra la imagen
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'block';
+              }}
+            />
+            {/* Fallback text responsivo mejorado */}
+            <h1 className="
+              hidden 
+              text-5xl sm:text-6xl md:text-8xl lg:text-9xl xl:text-10xl 2xl:text-11xl
+              font-black text-white 
+              leading-none
+              tracking-widest
+              drop-shadow-2xl
+              text-center
+              w-full
+            " style={{display: 'none'}}>
+              ZAPASTROSO
+            </h1>
+          </div>
+          
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            Bienvenido a Zapastroso
+            Bienvenido a Zapastrozos
           </h1>
           <p className="text-xl md:text-2xl mb-8">
             Los mejores tenis y calzado deportivo. Encuentra tu estilo perfecto con la mejor calidad y precios increíbles
@@ -251,7 +294,7 @@ const Home = () => {
           
           <div className="grid md:grid-cols-3 gap-8">
             {/* Zapatos Nuevos */}
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg p-6 border border-blue-100 dark:border-blue-800 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+            <div className="bg-linear-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg p-6 border border-blue-100 dark:border-blue-800 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <div className="bg-blue-100 dark:bg-blue-800 w-12 h-12 rounded-full flex items-center justify-center">
                   <Sparkles className="text-blue-600 dark:text-blue-300" size={24} />
@@ -274,7 +317,7 @@ const Home = () => {
             </div>
 
             {/* Zapatos en Oferta */}
-            <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-lg p-6 border border-red-100 dark:border-red-800 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+            <div className="bg-linear-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-lg p-6 border border-red-100 dark:border-red-800 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <div className="bg-red-100 dark:bg-red-800 w-12 h-12 rounded-full flex items-center justify-center">
                   <Percent className="text-red-600 dark:text-red-300" size={24} />
@@ -297,7 +340,7 @@ const Home = () => {
             </div>
 
             {/* Zapatos Medio Uso */}
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-6 border border-green-100 dark:border-green-800 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+            <div className="bg-linear-to-br from_green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-6 border border-green-100 dark:border-green-800 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <div className="bg-green-100 dark:bg-green-800 w-12 h-12 rounded-full flex items-center justify-center">
                   <Recycle className="text-green-600 dark:text-green-300" size={24} />
@@ -366,7 +409,7 @@ const Home = () => {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white py-16">
+  <div className="bg-linear-to-r from-teal-600 to-cyan-600 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">
             ¿Listo para encontrar tu par perfecto?

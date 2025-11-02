@@ -24,24 +24,7 @@ const YapeQRCode = ({ userId, orderId, onProofUploaded }) => {
 
   return (
     <div className="text-center">
-      {/* QR Code real de Yape */}
-      <div className="bg-white p-4 border border-gray-200 rounded-lg mb-4 inline-block shadow-sm">
-        {!imageError ? (
-          <img 
-            src="/images/qr-pago.png" 
-            alt="QR de Pago por QR para pago a Gerardo Pablo Moya Grageda"
-            className="w-48 h-48 mx-auto object-contain"
-            onError={handleImageError}
-          />
-        ) : (
-          // Fallback si la imagen no carga
-          <div className="w-48 h-48 mx-auto bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center">
-            <QrCode className="w-16 h-16 text-gray-400 mb-2" />
-            <p className="text-sm text-gray-500">QR de Pago por QR</p>
-            <p className="text-xs text-gray-400">Imagen no disponible</p>
-          </div>
-        )}
-      </div>
+      {/* Imagen QR removida de aquí; el QR se muestra en el selector para mantener un solo lugar visible */}
 
       {/* Uploader de comprobantes - solo si tenemos userId y orderId */}
       {userId && orderId && (

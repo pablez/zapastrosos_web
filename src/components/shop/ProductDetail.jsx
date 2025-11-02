@@ -31,6 +31,7 @@ const ProductDetail = () => {
   const { theme } = useTheme(); // Agregar tema para forzar re-render
   const totalItems = getCartItemsCount();
   const themeUpdate = useThemeListener(); // Hook para forzar re-render en cambios de tema
+  const FALLBACK_SVG = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0iI2NjYyIgdmlld0JveD0iMCAwIDI0IDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPjwvc3ZnPg==';
   
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -405,11 +406,11 @@ const ProductDetail = () => {
             {/* Imagen principal */}
             <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
               <img
-                src={allImages[selectedImage] || '/placeholder-image.jpg'}
+                src={allImages[selectedImage] || FALLBACK_SVG}
                 alt={product.name}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/500x500?text=Imagen+No+Disponible';
+                  e.target.src = FALLBACK_SVG;
                 }}
               />
             </div>
@@ -428,7 +429,7 @@ const ProductDetail = () => {
                     }`}
                   >
                     <img
-                      src={image}
+                      src={image || FALLBACK_SVG}
                       alt={`${product.name} vista ${index + 1}`}
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -622,7 +623,7 @@ const ProductDetail = () => {
                   >
                     <Minus className="w-4 h-4" />
                   </button>
-                  <span className="px-3 md:px-4 py-2 font-medium text-gray-900 dark:text-white min-w-[3rem] text-center">{quantity}</span>
+                  <span className="px-3 md:px-4 py-2 font-medium text-gray-900 dark:text-white min-w-12 text-center">{quantity}</span>
                   <button
                     onClick={() => setQuantity(Math.min(product.stock || 0, quantity + 1))}
                     disabled={quantity >= (product.stock || 0)}
@@ -686,7 +687,7 @@ const ProductDetail = () => {
               
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={() => navigate('/cart')}
+                  onClick={() => navigate('/carrito')}
                   className="flex-1 py-2 md:py-3 px-4 md:px-6 border-2 border-cyan-600 text-cyan-600 dark:border-cyan-400 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 rounded-lg font-medium transition-all inline-flex items-center justify-center text-sm md:text-base"
                 >
                   <Eye className="w-4 h-4 mr-2" />
@@ -695,7 +696,7 @@ const ProductDetail = () => {
                 <button
                   onClick={() => {
                     addToCart({ ...product, quantity, selectedSize, selectedColor });
-                    navigate('/cart');
+                    navigate('/carrito');
                   }}
                   disabled={!product.stock || product.stock === 0}
                   className={`flex-1 py-2 md:py-3 px-4 md:px-6 rounded-lg font-medium transition-all inline-flex items-center justify-center text-sm md:text-base ${
