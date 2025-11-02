@@ -9,6 +9,7 @@ const ProductModal = ({ isOpen, onClose, product = null, onSave }) => {
     brand: '',
     category: '',
     basePrice: '',
+    purchaseCost: '',
     descuento: 0, // Nuevo campo para descuentos
     stock: '',
     tipo: 'nuevo', // Nuevo campo para tipo de producto
@@ -52,6 +53,7 @@ const ProductModal = ({ isOpen, onClose, product = null, onSave }) => {
         brand: product.brand || '',
         category: product.category || '',
         basePrice: product.basePrice?.toString() || '',
+        purchaseCost: product.purchaseCost?.toString() || '',
         descuento: product.descuento || 0,
         stock: product.stock?.toString() || '',
         tipo: product.tipo || 'nuevo',
@@ -70,6 +72,7 @@ const ProductModal = ({ isOpen, onClose, product = null, onSave }) => {
         brand: '',
         category: '',
         basePrice: '',
+        purchaseCost: '',
         descuento: 0,
         stock: '',
         tipo: 'nuevo',
@@ -95,6 +98,9 @@ const ProductModal = ({ isOpen, onClose, product = null, onSave }) => {
     if (!formData.basePrice || isNaN(formData.basePrice) || formData.basePrice <= 0) {
       newErrors.basePrice = 'El precio debe ser un número válido mayor a 0';
     }
+    if (formData.purchaseCost === '' || isNaN(formData.purchaseCost) || Number(formData.purchaseCost) < 0) {
+      newErrors.purchaseCost = 'El costo de compra debe ser un número válido mayor o igual a 0';
+    }
     if (!formData.stock || isNaN(formData.stock) || formData.stock < 0) {
       newErrors.stock = 'El stock debe ser un número válido mayor o igual a 0';
     }
@@ -117,6 +123,7 @@ const ProductModal = ({ isOpen, onClose, product = null, onSave }) => {
         brand: formData.brand.trim(),
         category: formData.category,
         basePrice: parseFloat(formData.basePrice),
+        purchaseCost: parseFloat(formData.purchaseCost) || 0,
         descuento: parseInt(formData.descuento) || 0,
         stock: parseInt(formData.stock),
         tipo: formData.tipo,
@@ -262,6 +269,24 @@ const ProductModal = ({ isOpen, onClose, product = null, onSave }) => {
                   placeholder="0.00"
                 />
                 {errors.basePrice && <p className="text-red-500 text-sm mt-1">{errors.basePrice}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Costo de compra (Bs.)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.purchaseCost}
+                  onChange={(e) => setFormData({ ...formData, purchaseCost: e.target.value })}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent ${
+                    errors.purchaseCost ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="0.00"
+                />
+                {errors.purchaseCost && <p className="text-red-500 text-sm mt-1">{errors.purchaseCost}</p>}
+                <p className="text-gray-500 text-xs mt-1">Costo por unidad pagado al proveedor. Usado para calcular ganancias.</p>
               </div>
 
               <div>

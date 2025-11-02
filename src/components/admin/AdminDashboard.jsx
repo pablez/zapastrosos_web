@@ -10,6 +10,8 @@ const AdminDashboard = () => {
     pedidos: 0,
     ventasHoy: 0,
     ventasPendientes: 0,
+    gananciasTotales: 0,
+    gananciasHoy: 0,
     loading: true,
     error: null
   });
@@ -64,6 +66,10 @@ const AdminDashboard = () => {
 
       let ventasHoy = 0;
       let ventasPendientes = 0;
+  let totalRevenue = 0;
+  let totalCost = 0;
+  let totalProfit = 0;
+  let ventasHoyProfit = 0;
 
       // Procesar todos los pedidos
       pedidosSnapshot.forEach(doc => {
@@ -91,6 +97,38 @@ const AdminDashboard = () => {
           ventasPendientes += total;
           console.log(`⏳ Venta pendiente: $${total} (Total pendiente: $${ventasPendientes})`);
         }
+        // Calcular ingresos/costos por items para métricas de ganancias
+        try {
+          const items = data.items || [];
+          let orderRevenue = 0;
+          let orderCost = 0;
+          for (const it of items) {
+            const price = Number(it.price || 0);
+            const qty = Number(it.quantity || 0);
+            orderRevenue += price * qty;
+            // buscar costo en colección de productos
+            const prodId = it.productId || it.id;
+            const prodDoc = productosSnapshot.docs.find(p => p.id === prodId);
+            const purchaseCost = prodDoc ? Number(prodDoc.data()?.purchaseCost || 0) : 0;
+            orderCost += purchaseCost * qty;
+          }
+
+          if (data.status === 'completed') {
+            totalRevenue += orderRevenue;
+            totalCost += orderCost;
+            totalProfit += (orderRevenue - orderCost);
+
+            // si es de hoy sumar a gananciasHoy
+            if (data.createdAt) {
+              const fechaPedido = data.createdAt.toDate();
+              if (fechaPedido >= hoy && fechaPedido <= finDelDia) {
+                ventasHoyProfit += (orderRevenue - orderCost);
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('No se pudo calcular ganancias para pedido', doc.id, e);
+        }
       });
 
       console.log('📊 Estadísticas finales:', {
@@ -105,6 +143,8 @@ const AdminDashboard = () => {
         pedidos: totalPedidos,
         ventasHoy: ventasHoy,
         ventasPendientes: ventasPendientes,
+        gananciasTotales: totalProfit,
+        gananciasHoy: ventasHoyProfit,
         loading: false,
         error: null
       });
@@ -237,6 +277,20 @@ const AdminDashboard = () => {
         
   <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center mb-3">
+            <TrendingUp className="w-5 h-5 text-amber-600 mr-2" />
+            <h3 className="font-semibold text-gray-900">Reportes</h3>
+          </div>
+          <p className="text-sm text-gray-600 mb-3">Analiza ventas, costos y ganancias</p>
+          <Link 
+            to="/admin/reportes"
+            className="bg-amber-600 text-white px-3 py-1.5 rounded-md hover:bg-amber-700 text-sm inline-flex items-center"
+          >
+            Ver reportes
+          </Link>
+        </div>
+        
+  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-center mb-3">
             <Tag className="w-5 h-5 text-purple-600 mr-2" />
             <h3 className="font-semibold text-gray-900">Categorías</h3>
           </div>
@@ -337,6 +391,24 @@ const AdminDashboard = () => {
               </p>
               <div className="text-xs text-purple-700">
                 Gestiona tu inventario y mantén el stock actualizado
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Ganancias panel */}
+        <div className="bg-linear-to-r from-yellow-50 to-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="flex items-start">
+            <TrendingUp className="w-5 h-5 text-amber-600 mt-0.5 mr-3 shrink-0" />
+            <div className="flex-1">
+              <h3 className="text-base font-semibold text-amber-900 mb-1">💹 Ganancias</h3>
+              <p className="text-sm text-amber-800 mb-2">
+                {stats.loading ? 'Cargando...' : `Ganancia total: Bs. ${Number(stats.gananciasTotales || 0).toFixed(2)}`}
+              </p>
+              <div className="text-xs text-amber-700">
+                <div>Ingresos hoy: <span className="font-medium">Bs. {stats.ventasHoy?.toFixed(2)}</span></div>
+                <div>Ganancia hoy: <span className="font-medium">Bs. {Number(stats.gananciasHoy || 0).toFixed(2)}</span></div>
+                <div className="mt-1 text-xs text-amber-600">Basado en los items de pedidos completados y los costos registrados por producto.</div>
               </div>
             </div>
           </div>

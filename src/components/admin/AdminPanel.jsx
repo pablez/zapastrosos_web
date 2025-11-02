@@ -10,6 +10,7 @@ import CategoryManagement from './CategoryManagement';
 import OrderManagement from './OrderManagement';
 import UserManagement from './UserManagement';
 import AdminProfile from './AdminProfile';
+import Reports from './Reports';
 
 const AdminPanel = () => {
   const { logout, user } = useAuth();
@@ -112,6 +113,7 @@ const AdminPanel = () => {
             <Route path="/categorias" element={<CategoryManagement />} />
             <Route path="/pedidos" element={<OrderManagement />} />
             <Route path="/usuarios" element={<UserManagement />} />
+            <Route path="/reportes" element={<Reports />} />
             <Route path="/perfil" element={<AdminProfile />} />
             </Routes>
           </div>

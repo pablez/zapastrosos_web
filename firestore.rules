@@ -4,10 +4,17 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     // Función para verificar si el usuario es admin
+    // isAdmin: preferimos usar custom claims (request.auth.token.admin) para eficiencia.
+    // Como fallback (durante migración) aceptamos también la presencia de un documento
+    // users/{uid} con field role == 'admin'. Esto evita bloquear a administradores que
+    // aún no tienen el custom claim configurado.
     function isAdmin() {
-      return request.auth != null && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return request.auth != null && (
+        // Claim admin en el token (rápido y recomendado)
+        (request.auth.token.admin == true)
+        // O bien un documento users/{uid} con role == 'admin' (legacy / fallback)
+        || (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
     }
     
     // Función para verificar si está autenticado
@@ -45,16 +52,52 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
-    // PEDIDOS - Reglas temporales para debugging (muy permisivas)
+    // PEDIDOS - Reglas más seguras para production/emulator
+    // - Lectura: el propietario (userId) o admins
+    // - Creación: usuarios autenticados pueden crear su propia orden; validamos algunos campos básicos
+    // - Actualización: sólo admins pueden modificar libremente; propietarios pueden actualizar campos no sensibles
+    // - Eliminación: sólo admins
     match /orders/{orderId} {
-      allow read, write: if true; // Permitir todo temporalmente
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId || isAdmin()
+      );
+
+      allow create: if (
+        // Usuario autenticado creando su propia orden
+        (request.auth != null && request.auth.uid == request.resource.data.userId)
+        // O checkout como invitado: userId debe estar ausente o null
+        || (request.auth == null && (request.resource.data.userId == null || !(request.resource.data.keys().hasAny(['userId']))))
+      )
+        // status inicial permitido
+        && (request.resource.data.status == 'pending' || request.resource.data.status == 'pending_inventory')
+  // items debe ser lista razonable
+  && request.resource.data.items is list
+        && request.resource.data.items.size() > 0
+        && request.resource.data.items.size() <= 100
+        // payment.total debe ser número no negativo
+        && (request.resource.data.payment.total is number)
+        && request.resource.data.payment.total >= 0
+        // createdAt debe ser un timestamp (si lo envían desde cliente)
+        && (request.resource.data.createdAt is timestamp || !(request.resource.data.keys().hasAny(['createdAt']))) ;
+
+      allow update: if isAdmin()
+        // o permitir que el propietario actualice campos no sensibles
+        || (
+          request.auth != null
+          && request.auth.uid == resource.data.userId
+          // El cliente no puede cambiar items ni payment ni status arbitrariamente
+          && request.resource.data.items == resource.data.items
+          && request.resource.data.payment == resource.data.payment
+        );
+
+      allow delete: if isAdmin();
     }
 
     // REVIEWS - Los usuarios pueden crear reviews de sus pedidos
     match /reviews/{reviewId} {
       allow read: if true; // Cualquiera puede leer reviews
-      allow create: if isAuthenticated() && 
-                       request.auth.uid == resource.data.userId;
+      // En creación, usar request.resource.data (resource no existe aún)
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
       allow update: if isOwner(resource.data.userId) || isAdmin();
       allow delete: if isAdmin();
     }

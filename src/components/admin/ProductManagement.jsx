@@ -251,6 +251,7 @@ const ProductManagement = () => {
                     <div className="text-right">
                       <div className="text-sm font-semibold text-gray-900">Bs. {product.basePrice?.toFixed(2) || 'N/A'}</div>
                       <div className="text-xs text-gray-500">{product.category}</div>
+                      <div className="text-xs text-gray-500">Costo: Bs. {product.purchaseCost !== undefined ? Number(product.purchaseCost).toFixed(2) : 'N/A'}</div>
                     </div>
                   </div>
 
@@ -296,6 +297,9 @@ const ProductManagement = () => {
                   Categoría
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Costo
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Precio
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -312,7 +316,7 @@ const ProductManagement = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
                     {products.length === 0 
                       ? 'No hay productos cargados. Usa el botón "Nuevo Producto" para crear uno.'
                       : 'No se encontraron productos con los filtros aplicados.'
@@ -351,6 +355,11 @@ const ProductManagement = () => {
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         {product.category}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        Bs. {product.purchaseCost !== undefined ? Number(product.purchaseCost).toFixed(2) : 'N/A'}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">

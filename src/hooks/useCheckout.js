@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, addDoc, doc, updateDoc, getDoc, runTransaction, increment } from "firebase/firestore";
 import { db } from "../services/firebase";
+import { uploadPaymentProofToImageKit, checkImageKitAvailability } from "../services/imagekitService";
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -127,11 +128,11 @@ export const useCheckout = () => {
         return;
       }
       
-      // Validar tamaño (10MB máximo)
-      if (file.size > 10 * 1024 * 1024) {
+      // Validar tamaño (5MB máximo)
+      if (file.size > 5 * 1024 * 1024) {
         setErrors(prev => ({
           ...prev,
-          receipt: 'El archivo no debe superar los 10MB'
+          receipt: 'El archivo no debe superar los 5MB'
         }));
         return;
       }
@@ -158,8 +159,29 @@ export const useCheckout = () => {
     setIsLoading(true);
 
     try {
-        // Crear el pedido con la estructura exacta requerida
-        const orderData = {
+      // Normalizar la ubicación seleccionada (puede venir como { coordinates: {lat,lng}, address } o { lat,lng })
+      const normalizeLocation = (loc) => {
+        if (!loc) return null;
+        let coords = null;
+        let addr = null;
+        if (loc.coordinates && (typeof loc.coordinates.lat !== 'undefined' || typeof loc.coordinates.lng !== 'undefined')) {
+          coords = {
+            lat: Number(loc.coordinates.lat || loc.coordinates.latitude || 0),
+            lng: Number(loc.coordinates.lng || loc.coordinates.longitude || 0)
+          };
+          addr = loc.address || loc.addressString || null;
+        } else if (typeof loc.lat !== 'undefined' && typeof loc.lng !== 'undefined') {
+          coords = { lat: Number(loc.lat), lng: Number(loc.lng) };
+          addr = loc.address || null;
+        }
+        if (!coords) return null;
+        return { address: addr || formData.address || '', coordinates: coords };
+      };
+
+      const normalizedLocation = normalizeLocation(selectedLocation);
+
+      // Crear el pedido con la estructura exacta requerida
+      const orderData = {
         // Timestamp de creación
         createdAt: new Date(),
         
@@ -195,13 +217,7 @@ export const useCheckout = () => {
           address: formData.address,
           city: formData.city,
           zipCode: formData.zipCode,
-          location: selectedLocation ? {
-            address: formData.address,
-            coordinates: {
-              lat: selectedLocation.lat || selectedLocation.latitude || 0,
-              lng: selectedLocation.lng || selectedLocation.longitude || 0
-            }
-          } : null
+          location: normalizedLocation
         },
         
         // Estado del pedido
@@ -213,6 +229,72 @@ export const useCheckout = () => {
 
   // Crear la orden y reducir stock de forma transaccional (subcolección variants en products/{id}/variants/{variantId})
   const newOrderRef = doc(collection(db, 'orders'));
+
+
+  // Añadir objeto customer compatible con OrderLocationMap (admin espera order.customer.location.coordinates)
+  const nameParts = formData.fullName.trim().split(/\s+/);
+  orderData.customer = {
+    firstName: nameParts[0] || '',
+    lastName: nameParts.slice(1).join(' ') || '',
+    location: normalizedLocation
+  };
+
+  // Si hay un comprobante y se seleccionó pago por QR, intentar subirlo a ImageKit antes de crear la orden
+  if (receiptFile && selectedPaymentMethod === 'qr') {
+    // Si ImageKit está disponible, subir; si no, no abortar: guardar metadatos mínimos
+    if (checkImageKitAvailability()) {
+      try {
+        const uploadResult = await uploadPaymentProofToImageKit(receiptFile, user?.uid || 'guest', newOrderRef.id);
+        // Mapear la metadata para que PaymentProofViewer la consuma
+        orderData.paymentProofs = [
+          {
+            fileId: uploadResult.fileId,
+            url: uploadResult.url,
+            fileName: uploadResult.name,
+            size: uploadResult.size,
+            type: uploadResult.type,
+            isImage: uploadResult.isImage,
+            uploadedAt: uploadResult.uploadedAt,
+            uploadedBy: user?.uid || 'guest',
+            service: uploadResult.service || 'imagekit'
+          }
+        ];
+        orderData.payment = {
+          ...orderData.payment,
+          receiptUploaded: true
+        };
+      } catch (uploadErr) {
+        console.error('Error subiendo comprobante a ImageKit:', uploadErr);
+        // No abortar la creación de la orden; guardar metadatos locales para revisión manual
+        orderData.paymentProofs = [];
+        orderData.payment = {
+          ...orderData.payment,
+          receiptUploaded: false
+        };
+        orderData.pendingReceipt = {
+          fileName: receiptFile.name,
+          size: receiptFile.size,
+          type: receiptFile.type,
+          uploadedBy: user?.uid || null,
+          note: 'Upload failed, needs manual processing'
+        };
+      }
+    } else {
+      // ImageKit no está configurado: no abortar, guardar metadatos mínimos para procesar manualmente
+      orderData.paymentProofs = [];
+      orderData.payment = {
+        ...orderData.payment,
+        receiptUploaded: false
+      };
+      orderData.pendingReceipt = {
+        fileName: receiptFile.name,
+        size: receiptFile.size,
+        type: receiptFile.type,
+        uploadedBy: user?.uid || null,
+        note: 'ImageKit not configured; upload deferred'
+      };
+    }
+  }
 
   try {
     await runTransaction(db, async (tx) => {

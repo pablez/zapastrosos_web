@@ -45,7 +45,63 @@ const OrderManagement = () => {
         id: doc.id,
         ...doc.data()
       }));
-      setOrders(ordersData);
+      // Normalizar status para evitar valores en español o mayúsculas que rompan la UI
+      const normalizeStatus = (s) => {
+        if (!s) return 'pending';
+        const v = String(s).trim().toLowerCase();
+        if (v === 'pendiente' || v === 'pending' || v === 'pending_inventory') return 'pending';
+        if (v === 'pending_payment' || v === 'pago pendiente') return 'pending_payment';
+        if (v === 'completed' || v === 'completado') return 'completed';
+        if (v === 'cancelled' || v === 'cancelado') return 'cancelled';
+        return v;
+      };
+
+      const normalized = ordersData.map(o => ({
+        ...o,
+        status: normalizeStatus(o.status)
+      }));
+
+      setOrders(normalized);
+
+      // Intentar corregir en Firestore los documentos que tengan status no-canonical
+      // Limitamos la cantidad de escrituras por carga para evitar operaciones masivas accidentales
+      const CANONICAL = new Set(['pending', 'pending_payment', 'completed', 'cancelled']);
+      const toFix = ordersData.filter(o => {
+        const raw = (o.status || '').toString().trim().toLowerCase();
+        return !CANONICAL.has(raw) && normalizeStatus(raw) && normalizeStatus(raw) !== raw;
+      }).slice(0, 50); // máximo 50 actualizaciones por ejecución
+
+      if (toFix.length > 0) {
+        // helper local para mostrar toasts desde aquí (no dependemos de addToast que se declara más abajo)
+        const pushToast = (message, type = 'info') => {
+          const id = Date.now() + Math.random();
+          setToasts(prev => [...prev, { id, message, type }]);
+          setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4500);
+        };
+
+        let fixedCount = 0;
+        for (const o of toFix) {
+          try {
+            const canonical = normalizeStatus(o.status);
+            // Evitar actualizar si ya coincide
+            const raw = (o.status || '').toString().trim().toLowerCase();
+            if (raw === canonical) continue;
+
+            await updateDoc(doc(db, 'orders', o.id), { status: canonical });
+            fixedCount += 1;
+          } catch (e) {
+            console.warn('No se pudo normalizar status en Firestore para', o.id, e);
+            // Si es error de permisos, avisar al admin y no seguir intentando en este ciclo
+            const isPerm = e && (e.code === 'permission-denied' || /permission/i.test(e.message || ''));
+            if (isPerm) {
+              pushToast('Permisos insuficientes para escribir en Firestore. Algunas correcciones no se aplicaron.', 'error');
+              break;
+            }
+          }
+        }
+
+        if (fixedCount > 0) pushToast(`Se estandarizaron ${fixedCount} estado(s) de pedido automáticamente.`, 'success');
+      }
     } catch (error) {
       console.error('Error cargando pedidos:', error);
     } finally {
@@ -238,37 +294,75 @@ const OrderManagement = () => {
   // Pagination / load-more: show first (page * PAGE_SIZE) items
   const displayedOrders = filteredOrders.slice(0, page * PAGE_SIZE);
 
+  // Derived helpers: location for modal map and subtotal calculation
+  const getOrderMapLocation = (order) => {
+    if (!order) return null;
+    // Prefer customer.location, fallback to shippingAddress.location
+    const loc = order.customer?.location || order.shippingAddress?.location || null;
+    if (!loc) return null;
+    const coords = loc.coordinates || { lat: loc.lat || loc.latitude, lng: loc.lng || loc.longitude };
+    const lat = Number(coords?.lat || 0);
+    const lng = Number(coords?.lng || coords?.longitude || coords?.longitude || 0);
+    // If coordinates are exactly 0,0 treat as absent (likely not selected)
+    if (lat === 0 && lng === 0) return null;
+    return {
+      address: loc.address || loc.addressString || '' ,
+      coordinates: { lat, lng }
+    };
+  };
+
+  const computeSubtotal = (order) => {
+    if (!order) return 0;
+    // Prefer explicit summary.subtotal
+    const sumFromSummary = order.summary?.subtotal;
+    if (typeof sumFromSummary === 'number' && !Number.isNaN(sumFromSummary)) return sumFromSummary;
+
+    // Prefer payment.subtotal if present
+    const sumFromPayment = order.payment?.subtotal;
+    if (typeof sumFromPayment === 'number' && !Number.isNaN(sumFromPayment)) return sumFromPayment;
+
+    // Try payment total - shipping
+    const total = Number(order.payment?.total ?? order.summary?.total ?? NaN);
+    const shipping = Number(order.payment?.shipping ?? order.summary?.shipping ?? 0);
+    if (!Number.isNaN(total)) {
+      const calc = total - (Number.isNaN(shipping) ? 0 : shipping);
+      if (!Number.isNaN(calc)) return calc;
+    }
+
+    // Fallback: sum items price * qty
+    const items = order.items || [];
+    const itemsSum = items.reduce((acc, it) => acc + (Number(it.price || 0) * Number(it.quantity || 0)), 0);
+    return itemsSum;
+  };
+
   // Obtener color del estado
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'pending_payment': return 'bg-orange-100 text-orange-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+    const s = (status || '').toString().toLowerCase();
+    if (s === 'pending' || s === 'pending_inventory') return 'bg-yellow-100 text-yellow-800';
+    if (s === 'pending_payment') return 'bg-orange-100 text-orange-800';
+    if (s === 'completed') return 'bg-green-100 text-green-800';
+    if (s === 'cancelled') return 'bg-red-100 text-red-800';
+    return 'bg-gray-100 text-gray-800';
   };
 
   // Obtener ícono del estado
   const getStatusIcon = (status) => {
-    switch (status) {
-      case 'pending': return <Clock className="w-4 h-4" />;
-      case 'pending_payment': return <DollarSign className="w-4 h-4" />;
-      case 'completed': return <CheckCircle className="w-4 h-4" />;
-      case 'cancelled': return <XCircle className="w-4 h-4" />;
-      default: return <Package className="w-4 h-4" />;
-    }
+    const s = (status || '').toString().toLowerCase();
+    if (s === 'pending' || s === 'pending_inventory') return <Clock className="w-4 h-4" />;
+    if (s === 'pending_payment') return <DollarSign className="w-4 h-4" />;
+    if (s === 'completed') return <CheckCircle className="w-4 h-4" />;
+    if (s === 'cancelled') return <XCircle className="w-4 h-4" />;
+    return <Package className="w-4 h-4" />;
   };
 
   // Obtener texto del estado
   const getStatusText = (status) => {
-    switch (status) {
-      case 'pending': return 'Pendiente';
-      case 'pending_payment': return 'Pago Pendiente';
-      case 'completed': return 'Completado';
-      case 'cancelled': return 'Cancelado';
-      default: return 'Desconocido';
-    }
+    const s = (status || '').toString().toLowerCase();
+    if (s === 'pending' || s === 'pending_inventory' || s === 'pendiente') return 'Pendiente';
+    if (s === 'pending_payment' || s === 'pago pendiente') return 'Pago Pendiente';
+    if (s === 'completed' || s === 'completado') return 'Completado';
+    if (s === 'cancelled' || s === 'cancelado') return 'Cancelado';
+    return 'Desconocido';
   };
 
   // Ver detalles del pedido
@@ -284,6 +378,13 @@ const OrderManagement = () => {
       </div>
     );
   }
+
+  // Prepare modal derived values
+  const modalLocation = selectedOrder ? getOrderMapLocation(selectedOrder) : null;
+  const orderForMap = selectedOrder ? { ...selectedOrder, customer: { ...(selectedOrder.customer || {}), location: modalLocation } } : null;
+  const selectedSubtotal = selectedOrder ? computeSubtotal(selectedOrder) : 0;
+  const selectedShipping = selectedOrder ? Number(selectedOrder.payment?.shipping ?? selectedOrder.summary?.shipping ?? 0) : 0;
+  const selectedTotal = selectedOrder ? Number(selectedOrder.payment?.total ?? selectedOrder.summary?.total ?? 0) : 0;
 
   return (
     <div>
@@ -583,10 +684,10 @@ const OrderManagement = () => {
               </div>
 
               {/* Ubicación de entrega */}
-              {selectedOrder.customer?.location && (
+              {modalLocation && (
                 <div className="mt-6">
                   <h3 className="font-semibold text-gray-900 mb-3">Ubicación de Entrega</h3>
-                  <OrderLocationMap order={selectedOrder} />
+                  <OrderLocationMap order={orderForMap} />
                 </div>
               )}
 
@@ -630,15 +731,15 @@ const OrderManagement = () => {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
-                    <span>Bs. {(selectedOrder.payment?.total - selectedOrder.payment?.shipping || selectedOrder.summary?.subtotal || 0)?.toFixed(2)}</span>
+                    <span>Bs. {Number(selectedSubtotal || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between py-2">
                     <span>Delivery:</span>
-                    <span>Bs. {(selectedOrder.payment?.shipping || selectedOrder.summary?.shipping || 0)?.toFixed(2)}</span>
+                    <span>Bs. {Number(selectedShipping || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between py-2 font-bold border-t pt-2">
                     <span>Total:</span>
-                    <span>Bs. {(selectedOrder.payment?.total || selectedOrder.summary?.total || 0)?.toFixed(2)}</span>
+                    <span>Bs. {Number(selectedTotal || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between py-1 text-xs text-gray-600">
                     <span>Método de pago:</span>

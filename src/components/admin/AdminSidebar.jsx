@@ -14,6 +14,8 @@ import {
   User,
   Key,
   UserPlus
+  ,
+  TrendingUp
 } from 'lucide-react';
 
 const AdminSidebar = ({ isOpen, toggleSidebar }) => {
@@ -40,6 +42,11 @@ const AdminSidebar = ({ isOpen, toggleSidebar }) => {
       name: 'Pedidos',
       href: '/admin/pedidos',
       icon: ShoppingCart
+    },
+    {
+      name: 'Reportes',
+      href: '/admin/reportes',
+      icon: TrendingUp
     },
     {
       name: 'Admins',

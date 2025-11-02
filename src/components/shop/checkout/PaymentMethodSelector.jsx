@@ -139,7 +139,7 @@ const PaymentMethodSelector = ({
                     Haz clic para subir tu comprobante
                   </p>
                   <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                    PNG, JPG hasta 10MB
+                    PNG, JPG hasta 5MB
                   </p>
                 </label>
               </div>
