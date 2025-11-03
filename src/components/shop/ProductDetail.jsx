@@ -197,6 +197,49 @@ const ProductDetail = () => {
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
+  // Manejar comprar ahora: validar, agregar la cantidad seleccionada y navegar al carrito
+  const handleBuyNow = () => {
+    if (!selectedSize && product.sizes && product.sizes.length > 0) {
+      alert('Por favor selecciona una talla');
+      return;
+    }
+    if (!selectedColor && product.colors && product.colors.length > 0) {
+      alert('Por favor selecciona un color');
+      return;
+    }
+
+    const stockDisponible = product.stock || 0;
+    if (stockDisponible < quantity) {
+      alert(`No hay suficiente stock. Solo quedan ${stockDisponible} unidades disponibles.`);
+      return;
+    }
+
+    const cartProduct = {
+      id: product.id,
+      nombre: product.name,
+      marca: product.brand,
+      imagenPrincipalURL: product.mainImageUrl
+    };
+
+    const cartVariant = {
+      id: `${selectedSize || 'default'}-${selectedColor || 'default'}`,
+      talla: selectedSize || 'Talla única',
+      color: selectedColor || 'Color único',
+      precio: product.descuento > 0 ? product.basePrice * (1 - product.descuento / 100) : product.basePrice || 0,
+      precioOriginal: product.basePrice || 0,
+      descuento: product.descuento || 0,
+      stock: stockDisponible
+    };
+
+    // Agregar la cantidad solicitada
+    for (let i = 0; i < quantity; i++) {
+      addToCart(cartProduct, cartVariant);
+    }
+
+    // redirigir al carrito
+    navigate('/carrito');
+  };
+
   // Estados de carga y error
   if (loading) {
     return (
@@ -694,10 +737,7 @@ const ProductDetail = () => {
                   Ver carrito
                 </button>
                 <button
-                  onClick={() => {
-                    addToCart({ ...product, quantity, selectedSize, selectedColor });
-                    navigate('/carrito');
-                  }}
+                  onClick={handleBuyNow}
                   disabled={!product.stock || product.stock === 0}
                   className={`flex-1 py-2 md:py-3 px-4 md:px-6 rounded-lg font-medium transition-all inline-flex items-center justify-center text-sm md:text-base ${
                     !product.stock || product.stock === 0

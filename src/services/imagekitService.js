@@ -93,59 +93,88 @@ const getAuthenticationParameters = () => {
  * @returns {Promise<object>} - Información del archivo subido
  */
 export const uploadPaymentProofToImageKit = async (file, userId, orderId) => {
-  try {
-    // Validar archivo
-    const validation = validateFile(file);
-    if (!validation.isValid) {
-      throw new Error(validation.error);
-    }
+  // Wrapper that delegates to uploadWithProgress without progress callback
+  return uploadFileToImageKitWithProgress(file, userId, orderId, null);
+};
 
-    // Verificar que ImageKit esté configurado
-    if (!checkImageKitAvailability()) {
-      throw new Error('ImageKit no está configurado correctamente. Verifica las variables de entorno.');
-    }
+/**
+ * Sube un archivo a ImageKit usando XHR para permitir seguimiento de progreso.
+ * @param {File} file
+ * @param {string} userId
+ * @param {string} orderId
+ * @param {(percent:number)=>void|null} onProgress
+ * @returns {Promise<object>} upload result
+ */
+export const uploadFileToImageKitWithProgress = (file, userId, orderId, onProgress = null) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const validation = validateFile(file);
+      if (!validation.isValid) return reject(new Error(validation.error));
 
-    // Generar nombre único para el archivo
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:]/g, '-');
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `comprobante_${orderId}_${timestamp}.${fileExtension}`;
-    
-    console.log('Subiendo comprobante a ImageKit...');
-    
-    // Convertir File a base64 para ImageKit
-    const fileData = await fileToBase64(file);
-    
-    // Obtener parámetros de autenticación
-    const authParams = getAuthenticationParameters();
-    
-    // Subir archivo a ImageKit
-    const uploadResult = await imagekit.upload({
-      file: fileData, // archivo en base64
-      fileName: fileName,
-      folder: `/comprobantes/${userId}/`, // organizar por usuario
-      tags: [`order_${orderId}`, `user_${userId}`, 'comprobante_pago'],
-      useUniqueFileName: true,
-      ...authParams
-    });
-    
-    console.log('Comprobante subido exitosamente a ImageKit:', uploadResult);
-    
-    return {
-      fileId: uploadResult.fileId,
-      url: uploadResult.url,
-      name: uploadResult.name,
-      size: file.size,
-      type: file.type,
-      isImage: file.type.startsWith('image/'),
-      isPDF: file.type === 'application/pdf',
-      uploadedAt: new Date(),
-      service: 'imagekit'
-    };
-    
-  } catch (error) {
-    console.error('Error subiendo comprobante a ImageKit:', error);
-    throw new Error(`Error subiendo archivo: ${error.message}`);
-  }
+      if (!checkImageKitAvailability()) return reject(new Error('ImageKit no está configurado correctamente.'));
+
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/[:]/g, '-');
+      const fileExtension = file.name.split('.').pop();
+      const fileName = `comprobante_${orderId}_${timestamp}.${fileExtension}`;
+
+      const uploadUrl = (import.meta.env.VITE_IMAGEKIT_UPLOAD_ENDPOINT || 'https://upload.imagekit.io/api/v1/files/upload');
+
+      const form = new FormData();
+      form.append('file', file);
+      form.append('fileName', fileName);
+      form.append('folder', `/comprobantes/${userId}/`);
+      form.append('tags', `order_${orderId},user_${userId},comprobante_pago`);
+      form.append('useUniqueFileName', 'true');
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', uploadUrl, true);
+
+      // Basic auth with private key (NOTE: exposing privateKey client-side is insecure; for prod use backend signing)
+      const privateKey = import.meta.env.VITE_IMAGEKIT_PRIVATE_KEY || '';
+      if (privateKey) {
+        const basic = btoa(`${privateKey}:`);
+        xhr.setRequestHeader('Authorization', `Basic ${basic}`);
+      }
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && typeof onProgress === 'function') {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          try { onProgress(percent); } catch (err) {}
+        }
+      };
+
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === 4) {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const res = JSON.parse(xhr.responseText);
+              resolve({
+                fileId: res.fileId,
+                url: res.url,
+                name: res.name,
+                size: file.size,
+                type: file.type,
+                isImage: file.type.startsWith('image/'),
+                isPDF: file.type === 'application/pdf',
+                uploadedAt: new Date(),
+                service: 'imagekit'
+              });
+            } catch (err) {
+              reject(new Error('Respuesta inesperada de ImageKit'));
+            }
+          } else {
+            reject(new Error(`Error subiendo archivo: ${xhr.status} ${xhr.statusText} - ${xhr.responseText}`));
+          }
+        }
+      };
+
+      xhr.onerror = (err) => reject(new Error('Network error al subir archivo'));
+      xhr.send(form);
+
+    } catch (err) {
+      reject(err);
+    }
+  });
 };
 
 /**
